@@ -1,59 +1,108 @@
-fun! venus#PythonStart()
-	let g:venus_python_bufnr = term_start(g:venus_python_interpreter, {
-	\  "hidden": 1,
-	\  "term_finish": "close"
-	\})
-	call term_sendkeys(g:venus_python_bufnr, "import sys\n")
-endfun
+fun! venus#Start(interp_str)
+	let interp = g:venus_interpreters[a:interp_str]
 
-fun! venus#PythonExit()
-	if g:venus_python_bufnr != 0
-		call term_sendkeys(g:venus_python_bufnr, "")
-		let g:venus_python_bufnr = 0
-	endif
-endfun
-
-fun! venus#RunCellIntoMarkdown()
-	" Check there is an interpreter running
-	if g:venus_python_bufnr == 0
-		echo "There is no running interpreter"
-		return 1
-	endif
-	" Check we're in a python cell
-	let start = search('^```python$','bWcn')
-	let end   = search('^```$','Wn')
-
-	" Check that the cell is valid
-	" If there is no opening delimiter they will both return 0
-	if !(
-			\    (search('^```','bWcn') == start)
-			\ && (search('^```','Wn')  == end)
-			\ && (search('^```','bWcn') != 0)
-			\ && (search('^```','Wcn')  != 0)
-		\)
-		echo "Not in a python cell"
+	" Check that we don't already have an interpreter for this
+	if g:venus_interpreters[a:interp_str].bufnr != 0
+			|| ! bufexists(g:venus_interpreters[a:interp_str].bufnr)
 		return
 	endif
 
+	let g:venus_interpreters[a:interp_str].bufnr =
+	\	term_start(interp.binary, {
+	\		"hidden": 1,
+	\		"term_kill":   "term",
+	\		"term_finish": "close",
+	\	})
+
+	call term_sendkeys(
+	\	interp.bufnr,
+	\	interp.start_command . "\n" . interp.clear_command . "\n"
+	\)
+
+endfun
+
+fun! venus#StartAllInDocument()
+	for interp_str in filter(mapnew(
+	\		getline(0, '$'),
+	\		'matchstr(v:val, "^```\\%(output\\|error\\)\\@!\\zs.\\+$")'
+	\	), 'v:val != ""'
+	\)
+		if index(keys(g:venus_interpreters), interp_str) == -1
+			echo "No interpreter defined for " . interp_str
+		else
+			call venus#Start(interp_str)
+		endif
+	endfor
+endfun
+
+fun! venus#Exit(interp_str)
+	if g:venus_interpreters[a:interp_str].bufnr != 0
+		call term_sendkeys(g:venus_interpreters[a:interp_str].bufnr, "")
+		let g:venus_interpreters[a:interp_str].bufnr = 0
+	endif
+	call venus#CleanupFiles()
+endfun
+
+fun! venus#ExitAll()
+	for interp_str in keys(g:venus_interpreters)
+		if g:venus_interpreters[interp_str].bufnr != 0
+			call venus#Exit(interp_str)
+		endif
+	endfor
+	call venus#CleanupFiles()
+endfun
+
+fun! venus#CleanupFiles()
+	call system('rm '.g:venus_stdout.'* '.g:venus_stderr.'*')
+endfun
+
+fun! venus#RunCellIntoMarkdown()
+	" Find out what interpreter we should use
+ 	let interp_str = ""
+	for i in keys(g:venus_interpreters)
+		let start = search('^```'.i.'$','bWcn')
+		if start == search('^```','bWcn')
+			let interp_str = i
+			break
+		endif
+	endfor
+
+	let end = search('^```$','Wn')
+
+	" Check that the cell is valid
+	" If there is no opening delimiter they will both return 0
+	if !((search('^```','bWcn') == start) &&
+	\    (search('^```','Wn')   == end)   &&
+	\    (search('^```','bWcn') != 0)     &&
+	\    (search('^```','Wcn')  != 0)     &&
+	\    (interp_str != "")
+	\)
+		echo "Not in a valid cell"
+		return
+	endif
+
+	let interp = g:venus_interpreters[interp_str]
+
+	" Check there is an interpreter running
+	if interp.bufnr == 0
+		echo "There is no running interpreter for " . interp_str
+		return 1
+	endif
+
+
 	" Clear output manually so that vim waits before proceeding
-	" This will break python so we need to reset it
-	call system("echo '' > " . g:venus_python_stderr)
-	call system("echo '' > " . g:venus_python_stdout)
+	" This might break the interpreter so we should reset it's output
+	call system("echo -n '' > " . g:venus_stderr . interp_str)
+	call system("echo -n '' > " . g:venus_stdout . interp_str)
 	"
 	" Open files for writing. sys.stderr.out prints which is annoying
-	call term_sendkeys(g:venus_python_bufnr,
-		\ "sys.stderr=open('".g:venus_python_stderr."','w')\n"
-		\."sys.stderr.write('\\n')\n"
-		\."sys.stdout=open('".g:venus_python_stdout."','w')\n"
-		\."print()\n"
-	\)
+	call term_sendkeys(interp.bufnr, interp.clear_command . "\n")
 
 	" Remove the delimiters with [1:-2]
 	let lines = join(getline(start, end)[1:-2], "\n")."\n"
 
-	call term_sendkeys(g:venus_python_bufnr, lines
-		\."print('".g:venus_python_out_delim."',flush=True)\n"
-	\)
+	" Send the command
+	call term_sendkeys(interp.bufnr, lines . interp.delim_command . "\n")
 
 	" Look for existing output
 	call search('^```$','Wc')
@@ -72,28 +121,31 @@ fun! venus#RunCellIntoMarkdown()
 		norm! k
 	endif
 
-	" Put output in new block
-	while readfile(g:venus_python_stdout)[-1] != g:venus_python_out_delim
+	" Wait for output
+
+	while readfile(g:venus_stdout . interp_str) == [] ||
+				\ readfile(g:venus_stdout . interp_str)[-1] != g:venus_out_delim
 		sleep 10m
-		if match(readfile(g:venus_python_stderr)[-1], '^[^ ]*Error: ') != -1
+		" Stop if anything is written to stdout
+		if len(readfile(g:venus_stderr . interp_str)) > 0
 			break
 		endif
 	endwhile
 
 	" Don't pollute with lots of empty output blocks
-	if readfile(g:venus_python_stdout)[1:-2] != []
+	if readfile(g:venus_stdout . interp_str)[:-2] != []
 		call append(line('.'), ['```output','```'])
-		call append(line('.')+1,readfile(g:venus_python_stdout)[1:-2])
+		call append(line('.')+1,readfile(g:venus_stdout . interp_str)[:-2])
 	endif
-	if readfile(g:venus_python_stderr)[1:] != []
+	if readfile(g:venus_stderr . interp_str) != []
 		call append(line('.'), ['```error','```'])
-		call append(line('.')+1,readfile(g:venus_python_stderr)[1:])
+		call append(line('.')+1,readfile(g:venus_stderr . interp_str))
 	endif
 endfun
 
 fun! venus#RunAllIntoMarkdown()
 	norm gg
-	while search('^```python', 'cW') != 0
+	while search('^```\%(output\|error\)\@!.\+$', 'cW') != 0
 		if venus#RunCellIntoMarkdown() == 1
 			return 1
 		endif
@@ -135,7 +187,7 @@ fun! venus#Make()
 endfun
 
 fun! venus#RestartAndMake()
-	call venus#PythonExit()
+	call venus#Exit
 	call venus#PythonStart()
 	call venus#RunAllIntoMarkdown()
 	call venus#PandocMake()
