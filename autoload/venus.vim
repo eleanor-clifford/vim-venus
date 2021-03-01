@@ -3,7 +3,7 @@ fun! venus#Start(interp_str)
 
 	" Check that we don't already have an interpreter for this
 	if g:venus_interpreters[a:interp_str].bufnr != 0
-			|| ! bufexists(g:venus_interpreters[a:interp_str].bufnr)
+			\ && bufexists(g:venus_interpreters[a:interp_str].bufnr)
 		return
 	endif
 

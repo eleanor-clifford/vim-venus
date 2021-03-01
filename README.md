@@ -1,4 +1,4 @@
-# vim-venus
+# Venus
 
 It's like Jupyter, but lighter, faster, and hotter. Integrates Python and LaTeX
 into one markdown document.
@@ -143,3 +143,19 @@ let g:pandoc_options = '-V geometry:margin=1in'
 
 - There is currently syntax highlighting for markdown and python but not LaTeX
   (but there are LaTeX snippets!)
+
+- Occasionally the python interpreter needs an extra like to process a block of
+  code. For example:
+```python
+for i in range(2):
+	print("foo")
+print("bar")
+```
+results in
+```error
+  File "<stdin>", line 3
+    print("bar")
+    ^
+SyntaxError: invalid syntax
+```
+because the python interpreter requires an extra line after the end of blocks.
