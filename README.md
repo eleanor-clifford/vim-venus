@@ -90,25 +90,34 @@ Any errors which occur will be put into a separate code block like so:
 # Mappings
 
 The following mappings are enabled by default (they can be disabled with
-`let g:venus_mappings = 0`)
+`let g:venus_mappings = 0`). Venus will start when you open a file which
+containts code blocks it understands how to run (currently `python`). It will
+close when vim closes (or you can use `:call venus#ExitAll()` if you like)
 
 ```vimscript
-" Start
-nnoremap <leader>vv :call venus#PythonStart()<CR>
-nnoremap <leader>vq :call venus#PythonExit()<CR>
+" Start venus automatically on all markdown files which have a code block
+" venus understands
+augroup venus
+	autocmd!
+	autocmd FileType markdown :call venus#StartAllInDocument()
+augroup END
 
-" Run
+" Run cells
 nnoremap <leader>vx :call venus#RunCellIntoMarkdown()<CR>
 nnoremap <leader>va :call venus#RunAllIntoMarkdown()<CR>
 
-" Make PDF
-nnoremap <leader>vm :call venus#Make()<CR>
+" Compile PDF
 nnoremap <leader>vp :call venus#PandocMake()<CR>
+
+" Run all cells and compile PDF
+nnoremap <leader>vm :call venus#Make()<CR>
+
+" Restart all interpreters, run all cells, and compile PDF
 nnoremap <leader>vr :call venus#RestartAndMake()<CR>
 
-" goto cell
-nnoremap <leader>vc /```python<CR>
-nnoremap <leader>vC ?```python<CR>
+" Jump beween cells
+nnoremap <leader>vc /\v```%(error\|output)@!.+<CR>
+nnoremap <leader>vC ?\v```%(error\|output)@!.+<CR>
 ```
 
 # Optional settings
@@ -134,10 +143,3 @@ let g:pandoc_options = '-V geometry:margin=1in'
 
 - There is currently syntax highlighting for markdown and python but not LaTeX
   (but there are LaTeX snippets!)
-
-- The python interpreter (loaded in a hidden vim terminal) is not closed
-  automatically when exiting vim, so you have to close it manually (you will be
-  prompted to)
-
-- The files used by venus to handle python output (`.python_out` and
-  `.python_err`) are not deleted on exit
