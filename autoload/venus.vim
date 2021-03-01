@@ -7,22 +7,34 @@ fun! venus#Start(interp_str)
 		return
 	endif
 
-	let g:venus_interpreters[a:interp_str].bufnr =
-	\	term_start(interp.binary, {
-	\		"hidden": 1,
-	\		"term_kill":   "term",
-	\		"term_finish": "close",
-	\	})
+	if has("nvim")
+		" Not actually a bufnr on nvim
+		let g:venus_interpreters[a:interp_str].bufnr = jobstart(interp.binary)
+	else
+		let g:venus_interpreters[a:interp_str].bufnr =
+		\	term_start(interp.binary, {
+		\		"hidden": 1,
+		\		"term_kill":   "term",
+		\		"term_finish": "close",
+		\	})
+	endif
 
-	call term_sendkeys(
-	\	interp.bufnr,
-	\	interp.start_command . "\n" . interp.clear_command . "\n"
-	\)
+	if has("nvim")
+		call chansend(
+		\	interp.bufnr,
+		\	interp.start_command . "\n" . interp.clear_command . "\n"
+		\)
+	else
+		call term_sendkeys(
+		\	interp.bufnr,
+		\	interp.start_command . "\n" . interp.clear_command . "\n"
+		\)
+	endif
 
 endfun
 
 fun! venus#StartAllInDocument()
-	for interp_str in filter(mapnew(
+	for interp_str in filter(map(
 	\		getline(0, '$'),
 	\		'matchstr(v:val, "^```\\%(output\\|error\\)\\@!\\zs.\\+$")'
 	\	), 'v:val != ""'
@@ -37,7 +49,11 @@ endfun
 
 fun! venus#Exit(interp_str)
 	if g:venus_interpreters[a:interp_str].bufnr != 0
-		call term_sendkeys(g:venus_interpreters[a:interp_str].bufnr, "")
+		if has("nvim")
+			call chansend(g:venus_interpreters[a:interp_str].bufnr, "")
+		else
+			call term_sendkeys(g:venus_interpreters[a:interp_str].bufnr, "")
+		endif
 		let g:venus_interpreters[a:interp_str].bufnr = 0
 	endif
 	call venus#CleanupFiles()
@@ -94,15 +110,23 @@ fun! venus#RunCellIntoMarkdown()
 	" This might break the interpreter so we should reset it's output
 	call system("echo -n '' > " . g:venus_stderr . interp_str)
 	call system("echo -n '' > " . g:venus_stdout . interp_str)
-	"
+
 	" Open files for writing. sys.stderr.out prints which is annoying
-	call term_sendkeys(interp.bufnr, interp.clear_command . "\n")
+	if has("nvim")
+		call chansend(interp.bufnr, interp.clear_command . "\n")
+	else
+		call term_sendkeys(interp.bufnr, interp.clear_command . "\n")
+	endif
 
 	" Remove the delimiters with [1:-2]
 	let lines = join(getline(start, end)[1:-2], "\n")."\n"
 
 	" Send the command
-	call term_sendkeys(interp.bufnr, lines . interp.delim_command . "\n")
+	if has("nvim")
+		call chansend(interp.bufnr, lines . interp.delim_command . "\n")
+	else
+		call term_sendkeys(interp.bufnr, lines . interp.delim_command . "\n")
+	endif
 
 	" Look for existing output
 	call search('^```$','Wc')
