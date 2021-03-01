@@ -1,0 +1,11 @@
+metadata:
+  author: Full Name
+  keywords:
+    - 'dracula_theme'
+variables:
+  linkcolor: draculapink
+  filecolor: draculagreen
+  citecolor: draculapurple
+  urlcolor:  draculacyan
+  toccolor:  draculaorange
+  monofont:  NotoSansMono-Regular
