@@ -94,21 +94,21 @@ The following mappings are enabled by default (they can be disabled with
 
 ```vimscript
 " Start
-nnoremap <leader>jj :call venus#PythonStart()<CR>
-nnoremap <leader>jq :call venus#PythonExit()<CR>
+nnoremap <leader>vv :call venus#PythonStart()<CR>
+nnoremap <leader>vq :call venus#PythonExit()<CR>
 
 " Run
-nnoremap <leader>jx :call venus#RunCellIntoMarkdown()<CR>
-nnoremap <leader>ja :call venus#RunAllIntoMarkdown()<CR>
+nnoremap <leader>vx :call venus#RunCellIntoMarkdown()<CR>
+nnoremap <leader>va :call venus#RunAllIntoMarkdown()<CR>
 
 " Make PDF
-nnoremap <leader>jm :call venus#Make()<CR>
-nnoremap <leader>jp :call venus#PandocMake()<CR>
-nnoremap <leader>jr :call venus#RestartAndMake()<CR>
+nnoremap <leader>vm :call venus#Make()<CR>
+nnoremap <leader>vp :call venus#PandocMake()<CR>
+nnoremap <leader>vr :call venus#RestartAndMake()<CR>
 
 " goto cell
-nnoremap <leader>jc /```python<CR>
-nnoremap <leader>jC ?```python<CR>
+nnoremap <leader>vc /```python<CR>
+nnoremap <leader>vC ?```python<CR>
 ```
 
 # Optional settings
