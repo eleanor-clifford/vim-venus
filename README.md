@@ -74,7 +74,8 @@ nnoremap <leader>jc /```python<CR>
 nnoremap <leader>jC ?```python<CR>
 ```
 
-Other optional settings (examples shown):
+Other *optional* settings (examples shown). See `pandoc-examples` to get you
+started.
 ```vimscript
 " Location of pandoc yaml configuration file
 let g:pandoc_defaults_file = '~/.config/pandoc/pandoc.yaml'
