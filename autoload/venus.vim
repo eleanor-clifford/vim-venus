@@ -30,7 +30,6 @@ fun! venus#Start(interp_str)
 		\	interp.start_command . "\n" . interp.clear_command . "\n"
 		\)
 	endif
-
 endfun
 
 fun! venus#StartAllInDocument()
@@ -72,8 +71,81 @@ fun! venus#CleanupFiles()
 	call system('rm '.g:venus_stdout.'* '.g:venus_stderr.'*')
 endfun
 
-fun! venus#RunCellIntoMarkdown()
-	" Find out what interpreter we should use
+fun! s:RunInInterpreter(interp_str, lines)
+
+	let interp = g:venus_interpreters[a:interp_str]
+
+	" Clear output manually so that vim waits before proceeding
+	" This might break the interpreter so we should reset it's output
+	call system("echo -n '' > " . g:venus_stderr . a:interp_str)
+	call system("echo -n '' > " . g:venus_stdout . a:interp_str)
+
+	" Open files for writing. sys.stderr.out prints which is annoying
+	if has("nvim")
+		call chansend(interp.bufnr, interp.clear_command . "\n")
+	else
+		call term_sendkeys(interp.bufnr, interp.clear_command . "\n")
+	endif
+
+	" Send the command
+	if has("nvim")
+		call chansend(interp.bufnr, a:lines . interp.delim_command . "\n")
+	else
+		call term_sendkeys(interp.bufnr, a:lines . interp.delim_command . "\n")
+	endif
+	"
+	" Wait for output
+	while readfile(g:venus_stdout . a:interp_str) == [] ||
+				\ readfile(g:venus_stdout . a:interp_str)[-1] != g:venus_out_delim
+		sleep 10m
+		" Stop if anything is written to stdout
+		if len(readfile(g:venus_stderr . a:interp_str)) > 0
+			break
+		endif
+	endwhile
+
+	return [readfile(g:venus_stdout . a:interp_str)[:-2],
+	\       readfile(g:venus_stderr . a:interp_str)[:-2]]
+
+endfun
+
+fun! venus#GetVarsOfCurrent()
+
+	let current = s:GetInterpreterAndStart()[0]
+	if current == ""
+		" Fallback to first running interpreter we find
+		call venus#GetVars(keys(filter(
+		\	copy(g:venus_interpreters),
+		\	'v:val["bufnr"] != 0'
+		\))[0])
+	else
+		call venus#GetVars(current)
+	endif
+
+endfun
+
+fun! venus#GetVars(interp_str)
+
+	let [stdout, stderr] = s:RunInInterpreter(
+	\	a:interp_str,
+	\	g:venus_interpreters[a:interp_str].vars_command . "\n",
+	\)
+
+	if stderr != []
+		echo "Error encountered getting variables:\n" . join(stderr, "\n")
+	endif
+
+	let vars = json_decode(substitute(stdout[0], "^'\\|'$", "", "g"))
+
+	for rule in g:venus_interpreters[a:interp_str].var_filter_rules
+		call filter(vars, rule)
+	endfor
+
+	cexpr mapnew(items(vars), 'v:val[0].repeat(" ", 40-len(v:val[0])).v:val[1]')
+	copen 8
+endfun
+
+fun! s:GetInterpreterAndStart()
  	let interp_str = ""
 	for i in keys(g:venus_interpreters)
 		let start = search('^```'.i.'$','bWcn')
@@ -82,6 +154,12 @@ fun! venus#RunCellIntoMarkdown()
 			break
 		endif
 	endfor
+	return [interp_str, start]
+endfun
+
+fun! venus#RunCellIntoMarkdown()
+	" Find out what interpreter we should use
+	let [interp_str, start] = s:GetInterpreterAndStart()
 
 	let end = search('^```$','Wn')
 
@@ -97,36 +175,14 @@ fun! venus#RunCellIntoMarkdown()
 		return
 	endif
 
-	let interp = g:venus_interpreters[interp_str]
-
 	" Check there is an interpreter running
-	if interp.bufnr == 0
+	if g:venus_interpreters[interp_str].bufnr == 0
 		echo "There is no running interpreter for " . interp_str
 		return 1
 	endif
 
-
-	" Clear output manually so that vim waits before proceeding
-	" This might break the interpreter so we should reset it's output
-	call system("echo -n '' > " . g:venus_stderr . interp_str)
-	call system("echo -n '' > " . g:venus_stdout . interp_str)
-
-	" Open files for writing. sys.stderr.out prints which is annoying
-	if has("nvim")
-		call chansend(interp.bufnr, interp.clear_command . "\n")
-	else
-		call term_sendkeys(interp.bufnr, interp.clear_command . "\n")
-	endif
-
-	" Remove the delimiters with [1:-2]
 	let lines = join(getline(start, end)[1:-2], "\n")."\n"
-
-	" Send the command
-	if has("nvim")
-		call chansend(interp.bufnr, lines . interp.delim_command . "\n")
-	else
-		call term_sendkeys(interp.bufnr, lines . interp.delim_command . "\n")
-	endif
+	let [stdout, stderr] = s:RunInInterpreter(interp_str, lines)
 
 	" Look for existing output
 	call search('^```$','Wc')
@@ -145,25 +201,14 @@ fun! venus#RunCellIntoMarkdown()
 		norm! k
 	endif
 
-	" Wait for output
-
-	while readfile(g:venus_stdout . interp_str) == [] ||
-				\ readfile(g:venus_stdout . interp_str)[-1] != g:venus_out_delim
-		sleep 10m
-		" Stop if anything is written to stdout
-		if len(readfile(g:venus_stderr . interp_str)) > 0
-			break
-		endif
-	endwhile
-
 	" Don't pollute with lots of empty output blocks
-	if readfile(g:venus_stdout . interp_str)[:-2] != []
+	if stdout != []
 		call append(line('.'), ['```output','```'])
-		call append(line('.')+1,readfile(g:venus_stdout . interp_str)[:-2])
+		call append(line('.')+1, stdout)
 	endif
-	if readfile(g:venus_stderr . interp_str) != []
+	if stderr != []
 		call append(line('.'), ['```error','```'])
-		call append(line('.')+1,readfile(g:venus_stderr . interp_str))
+		call append(line('.')+1, stderr)
 	endif
 endfun
 
@@ -211,8 +256,8 @@ fun! venus#Make()
 endfun
 
 fun! venus#RestartAndMake()
-	call venus#Exit
-	call venus#PythonStart()
+	call venus#ExitAll()
+	call venus#StartAll()
 	call venus#RunAllIntoMarkdown()
 	call venus#PandocMake()
 endfun

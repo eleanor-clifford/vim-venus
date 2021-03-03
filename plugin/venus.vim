@@ -21,10 +21,15 @@ let g:venus_out_delim  		 = get(g:, 'venus_out_delim',     '```output end')
 let g:venus_interpreters = {
 \	"python": {
 \		"binary":        "python",
-\	    "start_command": "import sys",
+\		"start_command": "import sys; import json",
 \		"clear_command": "sys.stderr=open('".g:venus_stderr."python','w')\n"
 \					    ."sys.stdout=open('".g:venus_stdout."python','w')",
-\		"delim_command": "print('".g:venus_out_delim."',flush=True)",
+\		"delim_command": "print('".g:venus_out_delim."')",
+\		"vars_command":  "json.dumps({x:str(y) for x, y in globals().items()})",
+\		"var_filter_rules": [
+\			'v:key[0] != "_"',
+\			'v:val[0:6] != "<module"',
+\		],
 \	}
 \}
 
@@ -60,4 +65,7 @@ if g:venus_mappings
 	" Jump beween cells
 	nnoremap <leader>vc /\v```%(error\|output)@!.+<CR>
 	nnoremap <leader>vC ?\v```%(error\|output)@!.+<CR>
+
+	" Open variable explorer (in a quickfix window)
+	nnoremap <leader>ve :call venus#GetVarsOfCurrent()<CR>
 endif
