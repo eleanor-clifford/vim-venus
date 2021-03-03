@@ -87,6 +87,9 @@ Any errors which occur will be put into a separate code block like so:
     Hi world
     ```
 
+Venus also provides a simple variable explorer, which shows variable names and
+their value in the quickfix list
+
 # Mappings
 
 The following mappings are enabled by default (they can be disabled with
@@ -118,6 +121,9 @@ nnoremap <leader>vr :call venus#RestartAndMake()<CR>
 " Jump beween cells
 nnoremap <leader>vc /\v```%(error\|output)@!.+<CR>
 nnoremap <leader>vC ?\v```%(error\|output)@!.+<CR>
+
+" Open variable explorer (in a quickfix window)
+nnoremap <leader>ve :call venus#GetVarsOfCurrent()<CR>
 ```
 
 # Optional settings
