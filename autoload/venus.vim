@@ -2,34 +2,23 @@ fun! venus#Start(interp_str)
 	let interp = g:venus_interpreters[a:interp_str]
 
 	" Check that we don't already have an interpreter for this
-	if g:venus_interpreters[a:interp_str].bufnr != 0
-			\ && bufexists(g:venus_interpreters[a:interp_str].bufnr)
+	if exists("g:venus_interpreters[a:interp_str].job")
+			\ && job_status(g:venus_interpreters[a:interp_str].job) == "run"
 		return
 	endif
 
-	if has("nvim")
-		" Not actually a bufnr on nvim
-		let g:venus_interpreters[a:interp_str].bufnr = jobstart(interp.binary)
-	else
-		let g:venus_interpreters[a:interp_str].bufnr =
-		\	term_start(interp.binary, {
-		\		"hidden": 1,
-		\		"term_kill":   "term",
-		\		"term_finish": "close",
-		\	})
-	endif
+	let g:venus_interpreters[a:interp_str].job = job_start(
+	\	interp.binary, {
+	\		"callback":  "venus#OutputHandler",
+	\		"out_io":    "buffer",
+	\		"out_name":  a:interp_str,
+	\		"pty":       1
+	\	})
 
-	if has("nvim")
-		call chansend(
-		\	interp.bufnr,
-		\	interp.start_command . "\n" . interp.clear_command . "\n"
-		\)
-	else
-		call term_sendkeys(
-		\	interp.bufnr,
-		\	interp.start_command . "\n" . interp.clear_command . "\n"
-		\)
-	endif
+	call ch_sendraw(
+	\	job_getchannel(interp.job),
+	\	interp.start_command . "\n"
+	\)
 endfun
 
 fun! venus#StartAllInDocument()
@@ -47,66 +36,26 @@ fun! venus#StartAllInDocument()
 endfun
 
 fun! venus#Exit(interp_str)
-	if g:venus_interpreters[a:interp_str].bufnr != 0
-		if has("nvim")
-			call chansend(g:venus_interpreters[a:interp_str].bufnr, "")
-		else
-			call term_sendkeys(g:venus_interpreters[a:interp_str].bufnr, "")
-		endif
-		let g:venus_interpreters[a:interp_str].bufnr = 0
+	if exists("g:venus_interpreters[a:interp_str].job")
+		call job_stop(g:venus_interpreters[a:interp_str].job)
+		unlet g:venus_interpreters[a:interp_str].job
 	endif
-	call venus#CleanupFiles()
 endfun
 
 fun! venus#ExitAll()
 	for interp_str in keys(g:venus_interpreters)
-		if g:venus_interpreters[interp_str].bufnr != 0
+		if exists("g:venus_interpreters[interp_str].job")
 			call venus#Exit(interp_str)
 		endif
 	endfor
-	call venus#CleanupFiles()
-endfun
-
-fun! venus#CleanupFiles()
-	call system('rm '.g:venus_stdout.'* '.g:venus_stderr.'*')
 endfun
 
 fun! s:RunInInterpreter(interp_str, lines)
 
 	let interp = g:venus_interpreters[a:interp_str]
 
-	" Clear output manually so that vim waits before proceeding
-	" This might break the interpreter so we should reset it's output
-	call system("echo -n '' > " . g:venus_stderr . a:interp_str)
-	call system("echo -n '' > " . g:venus_stdout . a:interp_str)
-
-	" Open files for writing. sys.stderr.out prints which is annoying
-	if has("nvim")
-		call chansend(interp.bufnr, interp.clear_command . "\n")
-	else
-		call term_sendkeys(interp.bufnr, interp.clear_command . "\n")
-	endif
-
 	" Send the command
-	if has("nvim")
-		call chansend(interp.bufnr, a:lines . interp.delim_command . "\n")
-	else
-		call term_sendkeys(interp.bufnr, a:lines . interp.delim_command . "\n")
-	endif
-	"
-	" Wait for output
-	while readfile(g:venus_stdout . a:interp_str) == [] ||
-				\ readfile(g:venus_stdout . a:interp_str)[-1] != g:venus_out_delim
-		sleep 10m
-		" Stop if anything is written to stdout
-		if len(readfile(g:venus_stderr . a:interp_str)) > 0
-			break
-		endif
-	endwhile
-
-	return [readfile(g:venus_stdout . a:interp_str)[:-2],
-	\       readfile(g:venus_stderr . a:interp_str)[:-2]]
-
+	call ch_sendraw(job_getchannel(interp.job), a:lines . "\n")
 endfun
 
 fun! venus#GetVarsOfCurrent()
@@ -116,7 +65,7 @@ fun! venus#GetVarsOfCurrent()
 		" Fallback to first running interpreter we find
 		call venus#GetVars(keys(filter(
 		\	copy(g:venus_interpreters),
-		\	'v:val["bufnr"] != 0'
+		\	"exists('".'v:val["job"]'."')".' && job_status(v:val["job"]) == "run"'
 		\))[0])
 	else
 		call venus#GetVars(current)
@@ -125,17 +74,16 @@ fun! venus#GetVarsOfCurrent()
 endfun
 
 fun! venus#GetVars(interp_str)
-
-	let [stdout, stderr] = s:RunInInterpreter(
+	let g:venus_interpreters[a:interp_str].vars_waiting = 1
+	let stdout = s:RunInInterpreter(
 	\	a:interp_str,
 	\	g:venus_interpreters[a:interp_str].vars_command . "\n",
 	\)
+endfun
 
-	if stderr != []
-		echo "Error encountered getting variables:\n" . join(stderr, "\n")
-	endif
-
-	let vars = json_decode(substitute(stdout[0], "^'\\|'$", "", "g"))
+fun! venus#DisplayVars(msg, interp_str)
+	echo 'display '.a:msg
+	let vars = json_decode(a:msg)
 
 	for rule in g:venus_interpreters[a:interp_str].var_filter_rules
 		call filter(vars, rule)
@@ -176,13 +124,15 @@ fun! venus#RunCellIntoMarkdown()
 	endif
 
 	" Check there is an interpreter running
-	if g:venus_interpreters[interp_str].bufnr == 0
+	if ! exists("g:venus_interpreters[interp_str].job")
 		echo "There is no running interpreter for " . interp_str
 		return 1
 	endif
 
 	let lines = join(getline(start, end)[1:-2], "\n")."\n"
-	let [stdout, stderr] = s:RunInInterpreter(interp_str, lines)
+
+	let g:venus_interpreters[interp_str].listening = 1
+	call s:RunInInterpreter(interp_str, lines)
 
 	" Look for existing output
 	call search('^```$','Wc')
@@ -190,26 +140,60 @@ fun! venus#RunCellIntoMarkdown()
 	if search('```output','Wn') == line('.') + 1
 		" Remove existing output
 		norm! j
-		s/```output\n\%(\%(```\)\@!.*\n\)*```\n//
+		s/```output\n\%(\%(```\)\@!.*\n\)*```\n//e
 		norm! k
 	endif
 
 	if search('```error','Wn') == line('.') + 1
 		" Remove existing output
 		norm! j
-		s/```error\n\%(\%(```\)\@!.*\n\)*```\n//
+		s/```error\n\%(\%(```\)\@!.*\n\)*```\n//e
 		norm! k
 	endif
 
-	" Don't pollute with lots of empty output blocks
-	if stdout != []
-		call append(line('.'), ['```output','```'])
-		call append(line('.')+1, stdout)
+	call append(line('.'), ['```output','```'])
+	let g:venus_interpreters[interp_str].line_to_append = line('.') + 1
+endfun
+
+fun! venus#OutputHandler(channel, msg)
+	" Find out what interpreter this channel refers to
+	let found_interp = 0
+	for interp_str in keys(g:venus_interpreters)
+		if exists('g:venus_interpreters[interp_str]["job"]')
+					\ && job_getchannel(g:venus_interpreters[interp_str]["job"]) == a:channel
+			let found_interp = 1
+			break
+		endif
+	endfor
+	if ! found_interp
+		return 1
 	endif
-	if stderr != []
-		call append(line('.'), ['```error','```'])
-		call append(line('.')+1, stderr)
+
+	if ! g:venus_interpreters[interp_str].listening
+		return 1
 	endif
+
+
+	if (g:venus_interpreters[interp_str].output_ignore == ""
+				\ || match(a:msg, g:venus_interpreters[interp_str].output_ignore) == -1)
+		if g:venus_interpreters[interp_str].vars_waiting
+			let g:venus_interpreters[interp_str].vars_waiting = 0
+			call venus#DisplayVars(a:msg, interp_str)
+			return 0
+		else
+			call append(g:venus_interpreters[interp_str].line_to_append, a:msg)
+			let g:venus_interpreters[interp_str].line_to_append += 1
+		endif
+	endif
+
+	" Handle line numbers of other running interpreters
+	for i in keys(g:venus_interpreters)
+		if exists('g:venus_interpreters[i].line_to_append')
+				\ && g:venus_interpreters[i].line_to_append >
+					\ g:venus_interpreters[interp_str].line_to_append
+			let g:venus_interpreters[i].line_to_append = g:venus_interpreters[i].line_to_append + 1
+		endif
+	endfor
 endfun
 
 fun! venus#RunAllIntoMarkdown()
