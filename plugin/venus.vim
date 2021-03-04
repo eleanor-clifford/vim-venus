@@ -14,18 +14,15 @@ let g:pandoc_header_dir      = get(g:, 'pandoc_header_dir',     '')
 let g:pandoc_highlight_file  = get(g:, 'pandoc_highlight_file', '')
 let g:pandoc_options         = get(g:, 'pandoc_options',        '')
 let g:venus_mappings         = get(g:, 'venus_mappings',        1)
-let g:venus_stdout           = get(g:, 'venus_stdout',          '.venus_out_')
-let g:venus_stderr           = get(g:, 'venus_stderr',          '.venus_err_')
 let g:venus_out_delim  		 = get(g:, 'venus_out_delim',     '```output end')
 
 let g:venus_interpreters = {
 \	"python": {
 \		"binary":        "python",
-\		"start_command": "import sys; import json",
-\		"clear_command": "sys.stderr=open('".g:venus_stderr."python','w')\n"
-\					    ."sys.stdout=open('".g:venus_stdout."python','w')",
-\		"delim_command": "print('".g:venus_out_delim."')",
-\		"vars_command":  "json.dumps({x:str(y) for x, y in globals().items()})",
+\		"output_ignore": '^\(>>>\|\.\.\.\)',
+\		"start_command": "import json",
+\		"vars_command":  "print(json.dumps("
+\		                ."{x:str(y) for x, y in globals().items()}))",
 \		"var_filter_rules": [
 \			'v:key[0] != "_"',
 \			'v:val[0:6] != "<module"',
@@ -33,9 +30,10 @@ let g:venus_interpreters = {
 \	}
 \}
 
-" Set the bufnrs to 0, which is taken to mean the interpreter is not running
-for v in keys(g:venus_interpreters)
-	let g:venus_interpreters[v].bufnr = 0
+" Add some more things the user shouldn't care about
+for i in keys(g:venus_interpreters)
+	let g:venus_interpreters[i]["vars_waiting"] = 0
+	let g:venus_interpreters[i]["listening"] = 0
 endfor
 
 if g:venus_mappings
@@ -44,8 +42,6 @@ if g:venus_mappings
 	augroup venus
 		autocmd!
 		autocmd FileType markdown :call venus#StartAllInDocument()
-		autocmd FileType markdown
-			\ autocmd BufLeave *  :call venus#CleanupFiles()
 	augroup END
 
 
