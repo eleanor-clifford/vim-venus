@@ -5,7 +5,7 @@ let g:loaded_venus = 1
 
 
 let g:venus_cell_separators     = ['```python','```']
-let g:markdown_fenced_languages   = ['python']
+let g:markdown_fenced_languages   = ['python', 'sh', 'haskell']
 let g:tex_flavor                  = 'latex'
 
 " Optional user variables
@@ -27,7 +27,21 @@ let g:venus_interpreters = {
 \			'v:key[0] != "_"',
 \			'v:val[0:6] != "<module"',
 \		],
-\	}
+\	},
+\	"sh": {
+\		"binary":        "sh",
+\		"output_ignore": '^\([^ ]*\$\|>\)',
+\		"start_command": "",
+\		"vars_command":  "",
+\		"var_filter_rules": [],
+\	},
+\	"haskell": {
+\		"binary":        "ghci",
+\		"output_ignore": '^Prelude.*',
+\		"start_command": "",
+\		"vars_command":  "",
+\		"var_filter_rules": [],
+\	},
 \}
 
 " Add some more things the user shouldn't care about
