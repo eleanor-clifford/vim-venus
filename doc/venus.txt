@@ -1,0 +1,102 @@
+*venus.txt*  Lighter, faster, and hotter than Jupyter
+
+Author:  Tim Clifford <tclifford@protonmail.com>
+License: GPLv3 or later
+
+This plugin is only available if 'compatible' is not set.
+
+============================================================================
+INTRODUCTION                                                           *venus*
+
+Integrates languages with a REPL and LaTeX into one markdown document
+
+============================================================================
+FUNCTIONS                                                    *venus-functions*
+
+
+Start({interp_str})                                            *venus#Start()*
+                Start the interpreter with name `interp_str`
+
+StartAllInDocument({interp_str})                  *venus#StartAllInDocument()*
+                Start all interpreters detected in the document
+
+Close({interp_str})                                             *venus#Exit()*
+                Close the interpreter with name `interp_str`
+
+CloseAll()                                                   *venus#ExitAll()*
+                Close all interpreters
+
+GetVarsOfCurrent()                                  *venus#GetVarsOfCurrent()*
+                Open variable explorer of currently active interpreter
+
+GetVars(interp_str)                                          *venus#GetVars()*
+                Open varaible explorer of interpreter with name `interp_str`
+
+RunCellIntoMarkdown()                            *venus#RunCellIntoMarkdown()*
+                Run the current cell through the interpreter, and put the
+                output into an 'output' cell after the current cell
+
+RunAllIntoMarkdown()                              *venus#RunAllIntoMarkdown()*
+                Run all the cells in the document from the start, exactly
+                like |RunCellIntoMarkdown()|
+
+PandocMake()                                              *venus#PandocMake()*
+                Compile the current markdown file into a PDF with Pandoc. The
+                resulting file will have the same name and location as the
+                markdown file, except with the `.pdf` extension
+
+Make()                                                          *venus#Make()*
+                Exactly like |PandocMake()|, but run all the cells first
+
+RestartAndMake()                                      *venus#RestartAndMake()*
+                Exactly like |Make()|, but restart all the interpreters first
+
+
+===========================================================================
+MAPS                                                             *venus-maps*
+
+These maps can be disabled with |g:venus_mappings|
+
+<leader>vx    |venus#RunCellIntoMarkdown()|
+<leader>va    |venus#RunAllIntoMarkdown()|
+<leader>vp    |venus#PandocMake()|
+<leader>vm    |venus#Make()|
+<leader>vr    |venus#RestartAndMake()|
+<leader>vc    Jump to the start of the next cell
+<leader>vC    Jump to the start of the previous cell
+<leader>ve    |venus#GetVarsOfCurrent()|
+
+
+===========================================================================
+SETTINGS
+
+
+g:pandoc_defaults_file                               *g:pandoc_defaults_file*
+                Location of pandoc yaml configuration file to use. For an
+                example, see the `pandoc-examples` directory
+
+g:pandoc_header_dir                                     *g:pandoc_header_dir*
+                Directory of pandoc tex headers to include.
+
+g:pandoc_highlight_file                             *g:pandoc_highlight_file*
+                Pandoc highlight style file to use
+
+g:pandoc_options                                           *g:pandoc_options*
+                Command line options to pass to pandoc
+
+g:venus_mappings                                           *g:venus_mappings*
+                Whether to apply |venus-maps|. Set equal to `0` to disable maps
+
+g:venus_interpreters
+                Dictionary of interpreters. See `plugin/venus.vim` for the
+                defualt interpreter definitions. See also
+                |markdown_fenced_languages| for new interpreters which you add
+
+===========================================================================
+ABOUT                                                           *venus-about*
+
+Grab the latest version or report a bug on GitHub:
+
+https://github.com/tim-clifford/vim-venus
+
+ vim:tw=78:et:ft=help:norl:
