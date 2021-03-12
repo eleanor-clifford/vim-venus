@@ -1,10 +1,25 @@
+" Venus: Lighter, faster, and hotter than Jupyter
+"
+" Copyright (c) 2021 Ellie Clifford
+"
+" Venus is free software: you can redistribute it and/or modify
+" it under the terms of the GNU General Public License as published by
+" the Free Software Foundation, either version 3 of the License, or
+" (at your option) any later version.
+"
+" Venus is distributed in the hope that it will be useful,
+" but WITHOUT ANY WARRANTY; without even the implied warranty of
+" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+" GNU General Public License for more details.
+"
+" You should have received a copy of the GNU General Public License
+" along with Venus. If not, see <https://www.gnu.org/licenses/>.
+
 if exists('g:loaded_venus')
 	finish
 endif
 let g:loaded_venus = 1
 
-
-let g:venus_cell_separators     = ['```python','```']
 let g:markdown_fenced_languages   = ['python', 'sh', 'haskell']
 let g:tex_flavor                  = 'latex'
 
@@ -14,7 +29,6 @@ let g:pandoc_header_dir      = get(g:, 'pandoc_header_dir',     '')
 let g:pandoc_highlight_file  = get(g:, 'pandoc_highlight_file', '')
 let g:pandoc_options         = get(g:, 'pandoc_options',        '')
 let g:venus_mappings         = get(g:, 'venus_mappings',        1)
-let g:venus_out_delim  		 = get(g:, 'venus_out_delim',     '```output end')
 
 let g:venus_interpreters = {
 \	"python": {

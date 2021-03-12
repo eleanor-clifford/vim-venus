@@ -8,29 +8,10 @@ document.
 
 ## Installation
 
-With [Vundle.vim](https://github.com/VundleVim/Vundle.vim), in your ~/.vimrc:
-(then install with `:PluginInstall`)
+Use your favourite plugin manager. For example with
+[Vundle.vim](https://github.com/VundleVim/Vundle.vim):
 ```vimscript
 Plugin 'ellie-clifford/vim-venus'
-```
-
-With [pathogen.vim](https://github.com/tpope/vim-pathogen):
-```sh
-cd ~/.vim/bundle
-git clone https://git.sr.ht/~ecc/vim-venus
-```
-
-With [vim-plug](https://github.com/junegunn/vim-plug), in your ~/.vimrc:
-(then install with `:PlugInstall`)
-```vimscript
-Plug 'ellie-clifford/vim-venus'
-```
-
-With Vim 8+'s default packaging system:
-```sh
-mkdir -p ~/.vim/pack/bundle/start
-cd ~/.vim/pack/bundle/start
-git clone https://git.sr.ht/~ecc/vim-venus
 ```
 
 # Dependencies

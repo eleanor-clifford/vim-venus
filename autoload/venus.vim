@@ -1,3 +1,20 @@
+" Venus: Lighter, faster, and hotter than Jupyter
+"
+" Copyright (c) 2021 Ellie Clifford
+"
+" Venus is free software: you can redistribute it and/or modify
+" it under the terms of the GNU General Public License as published by
+" the Free Software Foundation, either version 3 of the License, or
+" (at your option) any later version.
+"
+" Venus is distributed in the hope that it will be useful,
+" but WITHOUT ANY WARRANTY; without even the implied warranty of
+" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+" GNU General Public License for more details.
+"
+" You should have received a copy of the GNU General Public License
+" along with Venus. If not, see <https://www.gnu.org/licenses/>.
+
 fun! venus#Start(interp_str)
 	let interp = g:venus_interpreters[a:interp_str]
 
@@ -35,17 +52,17 @@ fun! venus#StartAllInDocument()
 	endfor
 endfun
 
-fun! venus#Exit(interp_str)
+fun! venus#Close(interp_str)
 	if exists("g:venus_interpreters[a:interp_str].job")
 		call job_stop(g:venus_interpreters[a:interp_str].job)
 		unlet g:venus_interpreters[a:interp_str].job
 	endif
 endfun
 
-fun! venus#ExitAll()
+fun! venus#CloseAll()
 	for interp_str in keys(g:venus_interpreters)
 		if exists("g:venus_interpreters[interp_str].job")
-			call venus#Exit(interp_str)
+			call venus#Close(interp_str)
 		endif
 	endfor
 endfun
@@ -81,8 +98,7 @@ fun! venus#GetVars(interp_str)
 	\)
 endfun
 
-fun! venus#DisplayVars(msg, interp_str)
-	echo 'display '.a:msg
+fun! s:DisplayVars(msg, interp_str)
 	let vars = json_decode(a:msg)
 
 	for rule in g:venus_interpreters[a:interp_str].var_filter_rules
@@ -178,7 +194,7 @@ fun! venus#OutputHandler(channel, msg)
 				\ || match(a:msg, g:venus_interpreters[interp_str].output_ignore) == -1)
 		if g:venus_interpreters[interp_str].vars_waiting
 			let g:venus_interpreters[interp_str].vars_waiting = 0
-			call venus#DisplayVars(a:msg, interp_str)
+			call s:DisplayVars(a:msg, interp_str)
 			return 0
 		else
 			call append(g:venus_interpreters[interp_str].line_to_append, a:msg)
@@ -240,7 +256,7 @@ fun! venus#Make()
 endfun
 
 fun! venus#RestartAndMake()
-	call venus#ExitAll()
+	call venus#CloseAll()
 	call venus#StartAll()
 	call venus#RunAllIntoMarkdown()
 	call venus#PandocMake()
