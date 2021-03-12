@@ -30,10 +30,11 @@ let g:pandoc_highlight_file  = get(g:, 'pandoc_highlight_file', '')
 let g:pandoc_options         = get(g:, 'pandoc_options',        '')
 let g:venus_mappings         = get(g:, 'venus_mappings',        1)
 
+" Note that `output_ignore` matches on 1 or more
 let g:venus_interpreters = {
 \	"python": {
 \		"binary":        "python",
-\		"output_ignore": '^\(>>>\|\.\.\.\)',
+\		"output_ignore": '^\%(\%(>>>\|\.\.\.\)\+ *\)\+',
 \		"start_command": "import json",
 \		"vars_command":  "print(json.dumps("
 \		                ."{x:str(y) for x, y in globals().items()}))",
@@ -44,14 +45,14 @@ let g:venus_interpreters = {
 \	},
 \	"sh": {
 \		"binary":        "sh",
-\		"output_ignore": '^\([^ ]*\$\|>\)',
+\		"output_ignore": '^\(\([^ ]*\$\|>\)\+ *\)',
 \		"start_command": "",
 \		"vars_command":  "",
 \		"var_filter_rules": [],
 \	},
 \	"haskell": {
 \		"binary":        "ghci",
-\		"output_ignore": '^Prelude.*',
+\		"output_ignore": '^\(Prelude> *\)\+',
 \		"start_command": "",
 \		"vars_command":  "",
 \		"var_filter_rules": [],

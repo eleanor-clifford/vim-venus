@@ -134,8 +134,6 @@ let g:pandoc_options = '-V geometry:margin=1in'
 
 # Known Issues
 
-- Not currently working in Neovim
-
 - There is currently syntax highlighting for markdown and interpreted languages
   but not LaTeX (but there are LaTeX snippets!)
 
