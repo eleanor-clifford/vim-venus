@@ -94,14 +94,3 @@ if g:venus_mappings
 	" Open variable explorer (in a quickfix window)
 	nnoremap <leader>ve :call venus#GetVarsOfCurrent()<CR>
 endif
-
-if g:venus_vimtex_enabled
-	if !exists('*vimtex#init')
-		echom 'Vimtex is enabled but not installed!'
-	else
-		augroup venus_vimtex
-			autocmd!
-			autocmd FileType tex call vimtex#init()
-		augroup END
-	endif
-endif
