@@ -5,20 +5,20 @@ License: GPLv3 or later
 
 This plugin is only available if 'compatible' is not set.
 
-============================================================================
+===============================================================================
 INTRODUCTION                                                           *venus*
 
 Integrates languages with a REPL and LaTeX into one markdown document
 
-============================================================================
+===============================================================================
 FUNCTIONS                                                    *venus-functions*
 
 
-Start({interp_str})                                            *venus#Start()*
+StartInterpreter({interp_str})                      *venus#StartInterpreter()*
                 Start the interpreter with name `interp_str`
 
-StartAllInDocument({interp_str})                  *venus#StartAllInDocument()*
-                Start all interpreters detected in the document
+Start()                                                        *venus#Start()*
+                Start all detected interpreters and set filetype
 
 Close({interp_str})                                             *venus#Exit()*
                 Close the interpreter with name `interp_str`
@@ -52,7 +52,7 @@ RestartAndMake()                                      *venus#RestartAndMake()*
                 Exactly like |Make()|, but restart all the interpreters first
 
 
-===========================================================================
+==============================================================================
 MAPS                                                             *venus-maps*
 
 These maps can be disabled with |g:venus_mappings|
@@ -67,7 +67,7 @@ These maps can be disabled with |g:venus_mappings|
 <leader>ve    |venus#GetVarsOfCurrent()|
 
 
-===========================================================================
+==============================================================================
 SETTINGS
 
 
@@ -92,7 +92,7 @@ g:venus_interpreters
                 defualt interpreter definitions. See also
                 |markdown_fenced_languages| for new interpreters which you add
 
-===========================================================================
+==============================================================================
 ABOUT                                                           *venus-about*
 
 Grab the latest version or report a bug on GitHub:
