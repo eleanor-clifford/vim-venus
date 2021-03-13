@@ -53,22 +53,22 @@ RestartAndMake()                                      *venus#RestartAndMake()*
 
 
 ==============================================================================
-MAPS                                                             *venus-maps*
+MAPS                                              *venus-mappings* *venus-maps*
 
 These maps can be disabled with |g:venus_mappings|
 
-<leader>vx    |venus#RunCellIntoMarkdown()|
-<leader>va    |venus#RunAllIntoMarkdown()|
-<leader>vp    |venus#PandocMake()|
-<leader>vm    |venus#Make()|
-<leader>vr    |venus#RestartAndMake()|
+<leader>vx    Run the current cell    (see |venus#RunCellIntoMarkdown()|)
+<leader>va    Run all the cells       (see |venus#RunAllIntoMarkdown()|)
+<leader>vp    Compile with pandoc     (see |venus#PandocMake()|)
+<leader>vm    Run and compile         (see |venus#Make()|)
+<leader>vr    Restart and compile     (see |venus#RestartAndMake()|)
 <leader>vc    Jump to the start of the next cell
 <leader>vC    Jump to the start of the previous cell
-<leader>ve    |venus#GetVarsOfCurrent()|
+<leader>ve    Open variable explorer  (see |venus#GetVarsOfCurrent()|)
 
 
 ==============================================================================
-SETTINGS
+OPTIONS                                                       *venus-options*
 
 
 g:pandoc_defaults_file                               *g:pandoc_defaults_file*
@@ -85,12 +85,16 @@ g:pandoc_options                                           *g:pandoc_options*
                 Command line options to pass to pandoc
 
 g:venus_mappings                                           *g:venus_mappings*
-                Whether to apply |venus-maps|. Set equal to `0` to disable maps
+                Whether to apply |venus-maps|. Defaults to 1
 
-g:venus_interpreters
+g:venus_interpreters                                   *g:venus_interpreters*
                 Dictionary of interpreters. See `plugin/venus.vim` for the
                 defualt interpreter definitions. See also
                 |markdown_fenced_languages| for new interpreters which you add
+
+g:venus_vimtex_enabled                               *g:venus_vimtex_enabled*
+                Load vimtex automatically in markdown files. Defaults to 1
+
 
 ==============================================================================
 ABOUT                                                           *venus-about*

@@ -28,7 +28,8 @@ let g:pandoc_defaults_file   = get(g:, 'pandoc_defaults_file',  '')
 let g:pandoc_header_dir      = get(g:, 'pandoc_header_dir',     '')
 let g:pandoc_highlight_file  = get(g:, 'pandoc_highlight_file', '')
 let g:pandoc_options         = get(g:, 'pandoc_options',        '')
-let g:venus_mappings         = get(g:, 'venus_mappings',        1)
+let g:venus_vimtex_enabled   = get(g:, 'venus_vimtex_enabled',   1)
+let g:venus_mappings         = get(g:, 'venus_mappings',         1)
 
 " Note that `output_ignore` matches on 1 or more
 let g:venus_interpreters = {
@@ -92,4 +93,15 @@ if g:venus_mappings
 
 	" Open variable explorer (in a quickfix window)
 	nnoremap <leader>ve :call venus#GetVarsOfCurrent()<CR>
+endif
+
+if g:venus_vimtex_enabled
+	if !exists('*vimtex#init')
+		echom 'Vimtex is enabled but not installed!'
+	else
+		augroup venus_vimtex
+			autocmd!
+			autocmd FileType tex call vimtex#init()
+		augroup END
+	endif
 endif
