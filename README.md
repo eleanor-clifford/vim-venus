@@ -30,9 +30,7 @@ Optional:
   (forked from [goerz/jupytext.vim](https://github.com/goerz/jupytext.vim) to
   make a minor change) to automatically convert `.ipynb` notebooks to markdown
 
-- [ellie-clifford/vim-snippets](https://git.sr.ht/~ecc/vim-snippets)
-  (forked from [honza/vim-snippets](https://github.com/honza/vim-snippets)) to
-  enable LaTeX snippets in markdown files
+- [SirVer/ultisnips](https://github.com/SirVer/ultisnips) to enable snippets
 
 # Usage
 
