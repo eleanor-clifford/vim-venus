@@ -15,7 +15,7 @@
 " You should have received a copy of the GNU General Public License
 " along with Venus. If not, see <https://www.gnu.org/licenses/>.
 
-fun! venus#Start(interp_str)
+fun! venus#StartInterpreter(interp_str)
 	let interp = g:venus_interpreters[a:interp_str]
 
 	" Check that we don't already have an interpreter for this
@@ -54,7 +54,12 @@ fun! venus#Start(interp_str)
 	endif
 endfun
 
-fun! venus#StartAllInDocument()
+fun! venus#Start()
+	" It just seems to work better doing it like this
+	let &filetype = 'tex'
+	let &filetype = 'venus'
+
+	" Start interpreters which we can detect
 	for interp_str in filter(map(
 	\		getline(0, '$'),
 	\		'matchstr(v:val, "^```\\%(output\\|error\\)\\@!\\zs.\\+$")'
@@ -63,7 +68,7 @@ fun! venus#StartAllInDocument()
 		if index(keys(g:venus_interpreters), interp_str) == -1
 			echo "No interpreter defined for " . interp_str
 		else
-			call venus#Start(interp_str)
+			call venus#StartInterpreter(interp_str)
 		endif
 	endfor
 endfun
@@ -314,7 +319,7 @@ endfun
 
 fun! venus#RestartAndMake()
 	call venus#CloseAll()
-	call venus#StartAll()
+	call venus#Start()
 	call venus#RunAllIntoMarkdown()
 	call venus#PandocMake()
 endfun

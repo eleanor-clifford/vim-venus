@@ -134,9 +134,6 @@ let g:pandoc_options = '-V geometry:margin=1in'
 
 # Known Issues
 
-- There is currently syntax highlighting for markdown and interpreted languages
-  but not LaTeX (but there are LaTeX snippets!)
-
 - Occasionally the interpreter needs an extra like to process a block of
   code. For example:
 ```python
@@ -152,3 +149,10 @@ results in
 SyntaxError: invalid syntax
 ```
 because the python interpreter requires an extra line after the end of blocks.
+
+# Acknowledgements
+
+This repository uses an extract from
+[vim-pandoc-syntax](https://github.com/vim-pandoc/vim-pandoc-syntax) to achieve
+inline latex syntax highlighting. See [syntax/venus.vim](./syntax/venus.vim)
+ffor details

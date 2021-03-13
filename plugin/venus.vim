@@ -70,9 +70,8 @@ if g:venus_mappings
 	" venus understands
 	augroup venus
 		autocmd!
-		autocmd FileType markdown :call venus#StartAllInDocument()
+		autocmd FileType markdown :call venus#Start()
 	augroup END
-
 
 	" Run cells
 	nnoremap <leader>vx :call venus#RunCellIntoMarkdown()<CR>
