@@ -87,7 +87,7 @@ venus#ExitAll()` if you like)
 " venus understands
 augroup venus
 	autocmd!
-	autocmd FileType markdown :call venus#StartAllInDocument()
+	autocmd FileType markdown :call venus#Start()
 augroup END
 
 " Run cells
