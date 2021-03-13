@@ -14,27 +14,27 @@ Integrates languages with a REPL and LaTeX into one markdown document
 FUNCTIONS                                                    *venus-functions*
 
 
-StartInterpreter({interp_str})                      *venus#StartInterpreter()*
-                Start the interpreter with name `interp_str`
+StartREPL({repl_str})                                      *venus#StartREPL()*
+                Start the REPL with name `repl_str`
 
 Start()                                                        *venus#Start()*
-                Start all detected interpreters and set filetype
+                Start all detected REPLs and set filetype
 
-Close({interp_str})                                             *venus#Exit()*
-                Close the interpreter with name `interp_str`
+Close({repl_str})                                               *venus#Exit()*
+                Close the REPL with name `repl_str`
 
 CloseAll()                                                   *venus#ExitAll()*
-                Close all interpreters
+                Close all REPLs
 
 GetVarsOfCurrent()                                  *venus#GetVarsOfCurrent()*
-                Open variable explorer of currently active interpreter
+                Open variable explorer of currently active REPL
 
-GetVars(interp_str)                                          *venus#GetVars()*
-                Open varaible explorer of interpreter with name `interp_str`
+GetVars(repl_str)                                            *venus#GetVars()*
+                Open varaible explorer of REPL with name `repl_str`
 
 RunCellIntoMarkdown()                            *venus#RunCellIntoMarkdown()*
-                Run the current cell through the interpreter, and put the
-                output into an 'output' cell after the current cell
+                Run the current cell through the REPL, and put the
+                output into an "output" cell after the current cell
 
 RunAllIntoMarkdown()                              *venus#RunAllIntoMarkdown()*
                 Run all the cells in the document from the start, exactly
@@ -49,7 +49,7 @@ Make()                                                          *venus#Make()*
                 Exactly like |PandocMake()|, but run all the cells first
 
 RestartAndMake()                                      *venus#RestartAndMake()*
-                Exactly like |Make()|, but restart all the interpreters first
+                Exactly like |Make()|, but restart all the REPLs first
 
 
 ==============================================================================
@@ -57,43 +57,148 @@ MAPS                                              *venus-mappings* *venus-maps*
 
 These maps can be disabled with |g:venus_mappings|
 
-<leader>vx    Run the current cell    (see |venus#RunCellIntoMarkdown()|)
-<leader>va    Run all the cells       (see |venus#RunAllIntoMarkdown()|)
-<leader>vp    Compile with pandoc     (see |venus#PandocMake()|)
-<leader>vm    Run and compile         (see |venus#Make()|)
-<leader>vr    Restart and compile     (see |venus#RestartAndMake()|)
+<leader>vx    Run the current cell    (see |RunCellIntoMarkdown()|)
+<leader>va    Run all the cells       (see |RunAllIntoMarkdown()|)
+<leader>vp    Compile with pandoc     (see |PandocMake()|)
+<leader>vm    Run and compile         (see |Make()|)
+<leader>vr    Restart and compile     (see |RestartAndMake()|)
 <leader>vc    Jump to the start of the next cell
 <leader>vC    Jump to the start of the previous cell
-<leader>ve    Open variable explorer  (see |venus#GetVarsOfCurrent()|)
+<leader>ve    Open variable explorer  (see |GetVarsOfCurrent()|)
 
 
 ==============================================================================
 OPTIONS                                                       *venus-options*
 
+See |venus-defaults| for the default value of each option
 
 g:pandoc_defaults_file                               *g:pandoc_defaults_file*
-                Location of pandoc yaml configuration file to use. For an
-                example, see the `pandoc-examples` directory
+                Location of pandoc yaml configuration file to use.
 
 g:pandoc_header_dir                                     *g:pandoc_header_dir*
                 Directory of pandoc tex headers to include.
 
 g:pandoc_highlight_file                             *g:pandoc_highlight_file*
-                Pandoc highlight style file to use
+                Pandoc highlight style file to use.
 
 g:pandoc_options                                           *g:pandoc_options*
-                Command line options to pass to pandoc
+                Command line options to pass to pandoc.
 
 g:venus_mappings                                           *g:venus_mappings*
-                Whether to apply |venus-maps|. Defaults to 1
+                Set to 0 to disable the default |venus-mappings|.
 
-g:venus_interpreters                                   *g:venus_interpreters*
-                Dictionary of interpreters. See `plugin/venus.vim` for the
-                defualt interpreter definitions. See also
-                |markdown_fenced_languages| for new interpreters which you add
+g:venus_repls                                                 *g:venus_repls*
+                Dictionary of REPLs. See also |markdown_fenced_languages|. The
+                syntax is as follows: (see also |venus-defaults|) >
+
+    let g:venus_repls = {
+    \	"<name used for code block>": {
+    \		"binary":        "<executable file for the REPL>",
+    \		"output_ignore": "<regex to ignore from REPL (e.g. prompt)",
+    \                       ."note that this must match on one or more of the
+    \                       ."prompt>"
+    \		"start_command": "<command to be sent to the REPL at startup>",
+    \		"vars_command":  "<command that will make REPL output it's"
+    \		                ."variables as JSON {'name': 'value', ...}",
+    \		"var_filter_rules": [
+    \			'<rules used to specify which variables to take, e.g.>',
+    \			'v:val[0] != "_"',
+    \		],
+    \	},
+    \   "<another REPL>": {...
+    \   }
+    \}
+
 
 g:venus_vimtex_enabled                               *g:venus_vimtex_enabled*
-                Load vimtex automatically in markdown files. Defaults to 1
+                Set to 0 to disable loading vimtex automatically in markdown.
+
+g:venus_vimtex_full                                     *g:venus_vimtex_full*
+                Set to 1 to fully enable vimtex with no alterations (by
+                default the <leader>l mappings are disabled).
+
+g:venus_ignorelist                                       *g:venus_ignorelist*
+                List of file patterns to not start venus on (e.g. files that
+                you know use a different flavour of markdown)
+
+==============================================================================
+CONFIGURATION DEFAULTS                                       *venus-defaults*
+
+These are the default options. See also |g:venus_repls| for an explanation >
+
+    let s:plugindir              = expand('<sfile>:p:h:h')
+    let g:pandoc_defaults_file   = s:plugindir . '/pandoc/pandoc.yaml'
+    let g:pandoc_header_dir      = s:plugindir . '/pandoc/headers'
+    let g:pandoc_highlight_file  = s:plugindir . '/pandoc/dracula.theme'
+    let g:pandoc_options         = '-V geometry:margin=1in '
+
+    let g:venus_mappings    = 1
+    let g:vimtex_enabled    = 1
+    let g:vimtex_full       = 0
+    let g:venus_ignorelist  = ['README.md']
+
+    " REPLs
+    let g:markdown_fenced_languages   = ['python', 'sh', 'haskell']
+
+    " Note that `output_ignore` matches on 1 or more
+    let g:venus_repls = get(g:, 'venus_repls', {
+    \	"python": {
+    \		"binary":        "python",
+    \		"output_ignore": '^\%(\%(>>>\|\.\.\.\)\+ *\)\+',
+    \		"start_command": "import json",
+    \		"vars_command":  "print(json.dumps("
+    \		                ."{x:str(y) for x, y in globals().items()}))",
+    \		"var_filter_rules": [
+    \			'v:key[0] != "_"',
+    \			'v:val[0:6] != "<module"',
+    \		],
+    \	},
+    \	"sh": {
+    \		"binary":        "sh",
+    \		"output_ignore": '^\(\([^ ]*\$\|>\)\+ *\)',
+    \		"start_command": "",
+    \		"vars_command":  "",
+    \		"var_filter_rules": [],
+    \	},
+    \	"haskell": {
+    \		"binary":        "ghci",
+    \		"output_ignore": '^\(Prelude> *\)\+',
+    \		"start_command": "",
+    \		"vars_command":  "",
+    \		"var_filter_rules": [],
+    \	},
+    \})
+<
+
+==============================================================================
+KNOWN ISSUES                                             *venus-known-issues*
+
+- Occasionally the REPL needs an extra like to process a block of code.
+For example: >
+
+    ```python
+    for i in range(2):
+        print("foo")
+    print("bar")
+    ```
+<
+results in >
+
+    ```output
+    File "<stdin>", line 3
+        print("bar")
+        ^
+    SyntaxError: invalid syntax
+    ```
+<
+because the python REPL requires an extra line after the end of blocks.
+
+- If you use |RunAllIntoMarkdown()| when there is more than one block of
+  each type, Venus cannot distinguish where to split the output, and will put
+  all the output in the last output block. It will work as expected if you use
+  |RunCellIntoMarkdown()| on each cell manually
+
+- |Make()| starts Pandoc before the cells have finished running
 
 
 ==============================================================================
