@@ -55,8 +55,11 @@ fun! venus#StartInterpreter(interp_str)
 endfun
 
 fun! venus#Start()
-	" It just seems to work better doing it like this
-	let &filetype = 'tex'
+	if g:venus_vimtex_enabled
+		" The best way to do this seems to be to mess with the filetype
+		" Using vimtex#init() does not work as well
+		let &filetype = 'tex'
+	endif
 	let &filetype = 'venus'
 
 	" Start interpreters which we can detect
