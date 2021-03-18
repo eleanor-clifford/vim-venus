@@ -1,8 +1,8 @@
 # Venus
 
 It's like Jupyter, but lighter, faster, and hotter. Integrates languages with a
-REPL and LaTeX into one markdown document languages. Currently python, shell,
-and haskell REPLs are supported.
+REPL and LaTeX into one markdown document. Currently python, shell, and haskell
+REPLs are supported.
 
 ![Demo](demo.gif)
 
@@ -70,7 +70,8 @@ Any errors which occur will also be put into the output block like so:
 	```
 
 Venus also provides a simple variable explorer for python, which shows variable
-names and their value in the quickfix list.
+names and their value in the quickfix list. This can be extended to other
+languages.
 
 By default vimtex is also started in markdown files (if it is installed). This
 can be disabled, see [doc/venus.txt](./doc/venus.txt)
@@ -82,40 +83,15 @@ neovim)
 # Mappings
 
 A number of mappings are enabled by default (they can be disabled). For a full
-list see [doc/venus.txt](./doc/venus.txt) (or `:help venus-maqs`).
+list see [doc/venus.txt](./doc/venus.txt) or `:help venus-maps`.
 
 # Options
 
-See [doc/venus.txt](./doc/venus.txt) for a full list of options.
+See [doc/venus.txt](./doc/venus.txt) or `:help venus-options`.
 
 # Known Issues
 
-- Occasionally the REPL needs an extra like to process a block of code.
-  For example:
-
-```python
-for i in range(2):
-	print("foo")
-print("bar")
-```
-
-results in
-
-```output
-File "<stdin>", line 3
-    print("bar")
-    ^
-SyntaxError: invalid syntax
-```
-
-because the python REPL requires an extra line after the end of blocks.
-
-- If you use `venus#RunAllIntoMarkdown()` when there is more than one block of
-  each type, Venus cannot distinguish where to split the output, and will put
-  all the output in the last output block. It will work as expected if you use
-  `venus#RunCellIntoMarkdown()` on each cell manually
-
-- `venus#Make()` starts Pandoc before the cells have finished running
+See [doc/venus.txt](./doc/venus.txt) or `:help venus-known-issues`.
 
 # Acknowledgements
 
