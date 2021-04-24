@@ -27,10 +27,6 @@ let g:pandoc_header_dir      = get(g:, 'g:pandoc_header_dir',      s:plugindir.'
 let g:pandoc_highlight_file  = get(g:, 'g:pandoc_highlight_file',  s:plugindir.'/pandoc/dracula.theme')
 let g:pandoc_options         = get(g:, 'g:pandoc_options',         '-V geometry:margin=1in ')
 
-let g:pandoc_defaults_file   = get(g:, 'pandoc_defaults_file',	 '')
-let g:pandoc_header_dir      = get(g:, 'pandoc_header_dir',    	 '')
-let g:pandoc_highlight_file  = get(g:, 'pandoc_highlight_file',	 '')
-let g:pandoc_options         = get(g:, 'pandoc_options',       	 '')
 let g:venus_vimtex_enabled   = get(g:, 'venus_vimtex_enabled', 	  1)
 let g:venus_vimtex_full      = get(g:, 'venus_vimtex_full',    	  0)
 let g:venus_mappings         = get(g:, 'venus_mappings',       	  1)
