@@ -324,6 +324,14 @@ fun! venus#PandocMake()
 	execute make_cmd
 endfun
 
+fun! venus#OpenZathura()
+	if executable('zathura')
+		call system('zathura '.expand('%:t:r').'.pdf >/dev/null 2>&1 &')
+	else
+		echom "You need zathura to open zathura!"
+	endif
+endfun
+
 fun! venus#Make()
 	call venus#RunAllIntoMarkdown()
 	call venus#PandocMake()
