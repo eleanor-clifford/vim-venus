@@ -22,10 +22,10 @@ let g:loaded_venus = 1
 
 " Options
 let s:plugindir              = expand('<sfile>:p:h:h')
-let g:pandoc_defaults_file   = get(g:, 'g:pandoc_defaults_file',   s:plugindir.'/pandoc/pandoc.yaml')
-let g:pandoc_header_dir      = get(g:, 'g:pandoc_header_dir',      s:plugindir.'/pandoc/headers')
-let g:pandoc_highlight_file  = get(g:, 'g:pandoc_highlight_file',  s:plugindir.'/pandoc/dracula.theme')
-let g:pandoc_options         = get(g:, 'g:pandoc_options',         '-V geometry:margin=1in ')
+let g:pandoc_defaults_file   = get(g:, 'pandoc_defaults_file',   s:plugindir.'/pandoc/pandoc.yaml')
+let g:pandoc_header_dir      = get(g:, 'pandoc_header_dir',      s:plugindir.'/pandoc/headers')
+let g:pandoc_highlight_file  = get(g:, 'pandoc_highlight_file',  s:plugindir.'/pandoc/dracula.theme')
+let g:pandoc_options         = get(g:, 'pandoc_options',         '-V geometry:margin=1in ')
 
 let g:venus_vimtex_enabled   = get(g:, 'venus_vimtex_enabled', 	  1)
 let g:venus_vimtex_full      = get(g:, 'venus_vimtex_full',    	  0)
