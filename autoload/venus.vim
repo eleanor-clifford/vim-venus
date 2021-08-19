@@ -56,7 +56,7 @@ endfun
 
 fun! venus#Start()
 	for f in g:venus_ignorelist
-		if match(expand('%'), f) != -1
+		if match(expand('%:p'), f) != -1
 			return 0
 		endif
 	endfor
