@@ -297,7 +297,7 @@ endfun
 
 fun! venus#PandocMake()
 	let make_cmd = ':AsyncRun pandoc '
-		\ . expand('%:t:r').'.md -o '.expand('%:t:r').'.pdf '
+		\ . expand('%:r').'.md -o '.expand('%:r').'.pdf '
 		\ . '--pdf-engine=xelatex '
 
 	if g:pandoc_options != ''
