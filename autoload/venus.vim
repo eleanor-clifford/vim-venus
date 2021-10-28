@@ -20,7 +20,6 @@ fun! venus#StartREPL(repl_str)
 
 	" Check that we don't already have an REPL for this
 	if exists("g:venus_repls[a:repl_str].job")
-			\ && job_status(g:venus_repls[a:repl_str].job) == "run"
 		return
 	endif
 
@@ -29,6 +28,7 @@ fun! venus#StartREPL(repl_str)
 		let g:venus_repls[a:repl_str].job = jobstart(
 		\	"sh -sc 'stty -echo; " . repl.binary . "'", {
 		\		"on_stdout":        "venus#OutputHandler",
+		\		"on_exit":          "venus#ExitHandler",
 		\		"pty":              1,
 		\	})
 	else
@@ -93,7 +93,10 @@ fun! venus#Close(repl_str)
 		else
 			call job_stop(g:venus_repls[a:repl_str].job)
 		endif
-		unlet g:venus_repls[a:repl_str].job
+		if !has("nvim")
+			unlet g:venus_repls[a:repl_str].job
+		endif
+		# In nvim job should be unlet by venus#ExitHandler
 	endif
 endfun
 
@@ -118,18 +121,16 @@ fun! s:RunInREPL(repl_str, lines)
 endfun
 
 fun! venus#GetVarsOfCurrent()
-
 	let current = s:GetREPLAndStart()[0]
 	if current == ""
 		" Fallback to first running REPL we find
 		call venus#GetVars(keys(filter(
 		\	copy(g:venus_repls),
-		\	"exists('".'v:val["job"]'."')".' && job_status(v:val["job"]) == "run"'
+		\	"exists('".'v:val["job"]'."')"
 		\))[0])
 	else
 		call venus#GetVars(current)
 	endif
-
 endfun
 
 fun! venus#GetVars(repl_str)
@@ -283,7 +284,13 @@ fun! venus#OutputHandler(channel, msg, ...)
 			endif
 		endfor
 	endfor
+endfun
 
+fun! venus#ExitHandler(job, ...)
+	for i in keys(g:venus_repls)
+	if exists("g:venus_repls[i].job") && g:venus_repls[i].job == a:job
+		unlet g:venus_repls[i].job
+	endif
 endfun
 
 fun! venus#RunAllIntoMarkdown()
@@ -295,7 +302,7 @@ fun! venus#RunAllIntoMarkdown()
 	endwhile
 endfun
 
-fun! venus#PandocMake()
+fun! s:BuildPandocCmd()
 	let make_cmd = ':AsyncRun pandoc '
 		\ . expand('%:r').'.md -o '.expand('%:r').'.pdf '
 		\ . '--pdf-engine=xelatex '
@@ -321,12 +328,22 @@ fun! venus#PandocMake()
 		let make_cmd = make_cmd
 			\ . ' --highlight-style='.expand(g:pandoc_highlight_file)
 	endif
+	return make_cmd
+endfun
+
+fun! venus#PandocMake()
+	let make_cmd = s:BuildPandocCmd()
 	execute make_cmd
+endfun
+
+fun! venus#PandocMakeAndOpen()
+	let make_cmd = s:BuildPandocCmd()
+	execute make_cmd.' && zathura '.expand('%:r').'.pdf >/dev/null 2>&1 &'
 endfun
 
 fun! venus#OpenZathura()
 	if executable('zathura')
-		call system('zathura '.expand('%:t:r').'.pdf >/dev/null 2>&1 &')
+		call system('zathura '.expand('%:r').'.pdf >/dev/null 2>&1 &')
 	else
 		echom "You need zathura to open zathura!"
 	endif
