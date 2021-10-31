@@ -24,21 +24,25 @@ let g:loaded_venus = 1
 let s:plugindir              = expand('<sfile>:p:h:h')
 let g:pandoc_defaults_file   = get(g:, 'pandoc_defaults_file',   s:plugindir.'/pandoc/pandoc.yaml')
 let g:pandoc_header_dir      = get(g:, 'pandoc_header_dir',      s:plugindir.'/pandoc/headers')
-let g:pandoc_highlight_file  = get(g:, 'pandoc_highlight_file',  s:plugindir.'/pandoc/dracula.theme')
-let g:pandoc_options         = get(g:, 'pandoc_options',         '-V geometry:margin=1in ')
+let g:pandoc_options         = get(g:, 'pandoc_options',         '')
 
 let g:venus_vimtex_enabled   = get(g:, 'venus_vimtex_enabled', 	  1)
 let g:venus_vimtex_full      = get(g:, 'venus_vimtex_full',    	  0)
 let g:venus_mappings         = get(g:, 'venus_mappings',       	  1)
+let g:venus_delimiter        = get(g:, 'venus_delimiter', '========VENUS DELIMITER========')
+let g:venus_delimiter_regex  = get(g:, 'venus_delimiter_regex', '=\+VENUS DELIMITER=\+')
 
 let g:venus_ignorelist       = get(g:, 'venus_ignorelist', ['README.md'])
 
 " REPLs {{{
 let g:markdown_fenced_languages   = ['python', 'sh', 'haskell']
 " Note that `output_ignore` matches on 1 or more
+" preprocess (python) puts one empty line between all lines then removes them
+" when the 2nd line has equal or more indentation
 let g:venus_repls = get(g:, 'venus_repls', {
 \	"python": {
 \		"binary":        "python",
+\		"preprocess":    "venus#PythonPreProcessor",
 \		"output_ignore": '^\%(\%(>>>\|\.\.\.\)\+ *\)\+',
 \		"start_command": "import json",
 \		"vars_command":  "print(json.dumps("
@@ -50,6 +54,7 @@ let g:venus_repls = get(g:, 'venus_repls', {
 \	},
 \	"sh": {
 \		"binary":        "sh",
+\		"preprocess":    "venus#ShellPreProcessor",
 \		"output_ignore": '^\(\([^ ]*\$\|>\)\+ *\)',
 \		"start_command": "",
 \		"vars_command":  "",
@@ -57,7 +62,8 @@ let g:venus_repls = get(g:, 'venus_repls', {
 \	},
 \	"haskell": {
 \		"binary":        "ghci",
-\		"output_ignore": '^\(Prelude> *\)\+',
+\		"preprocess":    "venus#HaskellPreProcessor",
+\		"output_ignore": '^\(Prelude> *\|ghci> \)\+',
 \		"start_command": "",
 \		"vars_command":  "",
 \		"var_filter_rules": [],
@@ -67,7 +73,6 @@ let g:venus_repls = get(g:, 'venus_repls', {
 " Add some more things the user shouldn't care about
 for i in keys(g:venus_repls)
 	let g:venus_repls[i]["vars_waiting"] = 0
-	let g:venus_repls[i]["listening"] = 0
 endfor
 " }}}
 " Mappings {{{
