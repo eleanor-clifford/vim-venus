@@ -1,9 +1,19 @@
+# This yaml is run through a shell to evaluate the expressions.
+# Beware of special characters
+
 metadata:
   keywords:
-    - 'dracula_theme'
+    - 'Dracula theme'
+
+pdf-engine: xelatex
+highlight-style: ${plugindir}/pandoc/dracula.theme
+
 variables:
+  geometry:  margin=1in
   linkcolor: draculapink
   filecolor: draculagreen
   citecolor: draculapurple
   urlcolor:  draculacyan
   toccolor:  draculaorange
+  header-includes:
+    - \usepackage{${plugindir}/pandoc/draculatheme}
