@@ -84,24 +84,24 @@ if g:venus_mappings
 endif
 fun! venus#LoadMappings()
 	" Run cells
-	nnoremap <buffer> <leader>vx :call venus#RunCellIntoMarkdown()<CR>
-	nnoremap <buffer> <leader>va :call venus#RunAllIntoMarkdown()<CR>
+	nnoremap <silent> <buffer> <leader>vx :call venus#RunCellIntoMarkdown()<CR>
+	nnoremap <silent> <buffer> <leader>va :call venus#RunAllIntoMarkdown()<CR>
 
 	" Compile PDF
-	nnoremap <buffer> <leader>vp :call venus#PandocMake()<CR>
+	nnoremap <silent> <buffer> <leader>vp :call venus#PandocMake()<CR>
 
 	" Run all cells and compile PDF
-	nnoremap <buffer> <leader>vm :call venus#Make()<CR>
+	nnoremap <silent> <buffer> <leader>vm :call venus#Make()<CR>
 
 	" Restart all REPLs, run all cells, and compile PDF
-	nnoremap <buffer> <leader>vr :call venus#RestartAndMake()<CR>
+	nnoremap <silent> <buffer> <leader>vr :call venus#RestartAndMake()<CR>
 
 	" Jump beween cells
-	nnoremap <buffer> <leader>vc /\v```%(error\|output)@!.+<CR>
-	nnoremap <buffer> <leader>vC ?\v```%(error\|output)@!.+<CR>
+	nnoremap <silent> <buffer> <leader>vc /\v```%(error\|output)@!.+<CR>
+	nnoremap <silent> <buffer> <leader>vC ?\v```%(error\|output)@!.+<CR>
 
 	" Open variable explorer (in a quickfix window)
-	nnoremap <buffer> <leader>ve :call venus#GetVarsOfCurrent()<CR>
+	nnoremap <silent> <buffer> <leader>ve :call venus#GetVarsOfCurrent()<CR>
 endfun
 " }}}
 " Vimtex {{{
@@ -141,4 +141,10 @@ if g:venus_vimtex_enabled
 		\}
 	endif
 endif
+" }}}
+" Jupyter {{{
+augroup venus_jupyter
+	au!
+	autocmd BufReadCmd *.ipynb call venus#LoadJupyterNotebook()
+augroup END
 " }}}

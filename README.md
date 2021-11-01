@@ -1,8 +1,8 @@
 # Venus
 
-It's like Jupyter, but lighter, faster, and hotter. Integrates languages with a
-REPL and LaTeX into one markdown document. Currently python, shell, and haskell
-REPLs are supported.
+It's like Jupyter, but lighter, faster, and hotter. Integrates any language
+with a REPL along with  LaTeX into one markdown document. Currently python,
+shell, and haskell REPLs are supported.
 
 ![Demo](demo.gif)
 
@@ -16,8 +16,6 @@ Plugin 'tim-clifford/vim-venus'
 
 # Dependencies
 
-- [skywind3000/asyncrun.vim](https://github.com/skywind3000/asyncrun.vim)
-
 - An installation of pandoc with xelatex (e.g. `pandoc` and `texlive-most` on
   Arch Linux
 
@@ -26,11 +24,11 @@ Plugin 'tim-clifford/vim-venus'
 
 Optional:
 
-- [tim-clifford/jupytext.vim](https://github.com/tim-clifford/jupytext.vim)
-  (forked from [goerz/jupytext.vim](https://github.com/goerz/jupytext.vim) to
-  make a minor change) to automatically convert `.ipynb` notebooks to markdown
+- An installation of `jupytext` to convert jupyter notebooks into markdown
 
-- [SirVer/ultisnips](https://github.com/SirVer/ultisnips) to enable snippets
+- [SirVer/ultisnips](https://github.com/SirVer/ultisnips) and
+  [honza/vim-snippets](https://github.com/honza/vim-snippets) to enable
+  snippets
 
 - [lervag/vimtex](https://github.com/lervag/vimtex) for advanced LaTeX usage
 
@@ -75,10 +73,6 @@ languages.
 
 By default vimtex is also started in markdown files (if it is installed). This
 can be disabled, see [doc/venus.txt](./doc/venus.txt)
-
-If Venus is misbehaving, you can see the raw REPL output in the job buffers,
-named according to the name of the language. (Only in vim currently, not
-neovim)
 
 # Mappings
 
