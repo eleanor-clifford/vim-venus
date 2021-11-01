@@ -210,7 +210,7 @@ fun! venus#RunCellIntoMarkdown()
 endfun
 
 fun! venus#RunAllIntoMarkdown()
-	norm gg
+	norm! gg
 	while search('^```\%(output\|error\)\@!.\+$', 'cW') != 0
 		if venus#RunCellIntoMarkdown() == 1
 			return 1
@@ -416,11 +416,9 @@ fun! s:BuildPandocCmd()
 
 	return make_cmd
 endfun
-fun! venus#Test()
-	echo s:BuildPandocCmd()
-endfun
 
 fun! venus#PandocMake()
+	w
 	let make_cmd = s:BuildPandocCmd()
 	if has("nvim")
 		let g:venus_pandoc_job = jobstart(
@@ -495,6 +493,32 @@ endfun
 
 fun! s:ZathuraExitHandler(job, ...)
 	unlet g:venus_zathura_job
+endfun
+" }}}
+" Jupyter {{{
+fun! venus#LoadJupyterNotebook()
+	if ! executable("jupytext")
+		echoe "You need jupytext to open jupyter notebooks!"
+		return
+	endif
+
+	let basename = expand('%:r')
+	let out = system("jupytext " . basename . ".ipynb "
+				\ ."--to md:pandoc "
+				\ ."--opt cell_metadata_filter=-all "
+				\ ."--opt notebook_metadata_filter=-all "
+				\ )
+	if v:shell_error != 0
+		echoe "Conversion finished with errors:"
+		echon "\n" . out
+	else
+		execute "edit " . basename . ".md"
+		set ft=venus| " why is this required??
+		g/^:::/d " Remove cell delimiters
+		" Fix highlighting issue
+		%s/\(\*\+\)[[:space:]]*\(.\{-}\)[[:space:]]*\1/\1\2\1/g
+		norm! gg
+	endif
 endfun
 " }}}
 " Aggregate functions {{{
