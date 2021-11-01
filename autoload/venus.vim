@@ -395,7 +395,7 @@ fun! s:BuildPandocCmd()
 	let make_cmd = 'tmpfile=$(mktemp); '
 				\ .'export plugindir=' . s:plugindir . '; '
 				\ .'envsubst <'.g:pandoc_defaults_file . ' > $tmpfile; '
-				\ .'pandoc ' . expand('%:r').'.md -o ' . expand('%:r').'.pdf '
+				\ ."pandoc '".expand('%:r').".md' -o '".expand('%:r')."'.pdf "
 
 	if g:pandoc_options != ''
 		let make_cmd = make_cmd
@@ -418,7 +418,7 @@ fun! s:BuildPandocCmd()
 endfun
 
 fun! venus#PandocMake()
-	w
+	silent write
 	let make_cmd = s:BuildPandocCmd()
 	if has("nvim")
 		let g:venus_pandoc_job = jobstart(
@@ -479,12 +479,12 @@ fun! venus#OpenZathura()
 	if ! exists('g:venus_zathura_job')
 		if has("nvim")
 			let g:venus_zathura_job = jobstart(
-			\	'zathura '.expand('%:r').'.pdf', {
+			\	"zathura '".expand('%:r').".pdf'", {
 			\		"on_exit": function('s:ZathuraExitHandler'),
 			\	})
 		else
 			let g:venus_zathura_job = job_start(
-			\	'zathura '.expand('%:r').'.pdf', {
+			\	"zathura '".expand('%:r').".pdf'", {
 			\		"exit_cb": function('s:ZathuraExitHandler'),
 			\	})
 		endif
@@ -503,21 +503,37 @@ fun! venus#LoadJupyterNotebook()
 	endif
 
 	let basename = expand('%:r')
-	let out = system("jupytext " . basename . ".ipynb "
+	let out = system("jupytext '" . basename . ".ipynb' "
 				\ ."--to md:pandoc "
 				\ ."--opt cell_metadata_filter=-all "
 				\ ."--opt notebook_metadata_filter=-all "
+				\ ."--opt comment_magics=true "
 				\ )
 	if v:shell_error != 0
 		echoe "Conversion finished with errors:"
 		echon "\n" . out
 	else
 		execute "edit " . basename . ".md"
-		set ft=venus| " why is this required??
+		let l:save_view = winsaveview()
 		g/^:::/d " Remove cell delimiters
 		" Fix highlighting issue
-		%s/\(\*\+\)[[:space:]]*\(.\{-}\)[[:space:]]*\1/\1\2\1/g
+		keeppatterns %s/\(\*\+\)[[:space:]]*\(.\{-}\)[[:space:]]*\1/\1\2\1/ge
+		" Fix code cells
+		keeppatterns %s/^```\zs[[:space:]]*//e
+
+		" Comment python magics (jupytext should be able to do this???)
 		norm! gg
+		while search('^%\+', 'cW') != 0
+			if s:GetREPLAndStart()[0] == 'python'
+				keeppatterns s/^%/# %/
+			endif
+		endwhile
+
+		set ft=venus| " why is this required??
+		if g:venus_mappings " ????
+			call venus#LoadMappings()
+		endif
+		call winrestview(l:save_view)
 	endif
 endfun
 " }}}
