@@ -94,7 +94,9 @@ g:venus_mappings                                           *g:venus_mappings*
 
 g:venus_repls                                                 *g:venus_repls*
                 Dictionary of REPLs. See also |markdown_fenced_languages|. The
-                syntax is as follows: (see also |venus-defaults|) >
+                syntax is as follows: (see also |venus-defaults|).
+                `start_command`, `vars_command`, and `var_filter_rules` are
+                optional >
 
     let g:venus_repls = {
     \  "<name used for code block>": {
@@ -138,7 +140,8 @@ g:venus_delimiter_regex                             *g:venus_delimiter_regex*
 ==============================================================================
 CONFIGURATION DEFAULTS                                       *venus-defaults*
 
-These are the default options. See also |g:venus_repls| for an explanation >
+These are the default options. See also |g:venus_repls| for an explanation of
+the REPL dictionary >
 
     let g:pandoc_defaults_file  = s:plugindir.'/pandoc/pandoc.yaml'
     let g:pandoc_header_dir  = s:plugindir.'/pandoc/headers'
@@ -153,9 +156,9 @@ These are the default options. See also |g:venus_repls| for an explanation >
     let g:venus_ignorelist  = ['README.md']
 
     " REPLs
-    let g:markdown_fenced_languages   = ['python', 'sh', 'haskell']
+    let g:markdown_fenced_languages = ['python', 'sh', 'haskell', 'r']
 
-    " Note that `output_ignore` matches on 1 or more
+    " Note that `output_ignore` matches on 1 or more occurences
     let g:venus_repls = get(g:, 'venus_repls', {
     \	"python": {
     \		"binary":        "python",
@@ -173,17 +176,16 @@ These are the default options. See also |g:venus_repls| for an explanation >
     \		"binary":        "sh",
     \		"preprocess":    "venus#ShellPreProcessor",
     \		"output_ignore": '^\(\([^ ]*\$\|>\)\+ *\)',
-    \		"start_command": "",
-    \		"vars_command":  "",
-    \		"var_filter_rules": [],
     \	},
     \	"haskell": {
     \		"binary":        "ghci",
     \		"preprocess":    "venus#HaskellPreProcessor",
     \		"output_ignore": '^\(Prelude> *\|ghci> \)\+',
-    \		"start_command": "",
-    \		"vars_command":  "",
-    \		"var_filter_rules": [],
+    \	},
+    \	"R": {
+    \		"binary":        "R",
+    \		"preprocess":    "venus#RPreProcessor",
+    \		"output_ignore": '^\(> *\|\[\d\+\] *\)\+',
     \	},
     \})
 <
@@ -191,7 +193,10 @@ These are the default options. See also |g:venus_repls| for an explanation >
 ==============================================================================
 KNOWN ISSUES                                             *venus-known-issues*
 
-None right now!
+- Occasionally erroneous newlines appear in the output
+
+- Occasionally when restarting the REPLs the the intro text ends up in an
+  output block.
 
 ==============================================================================
 ABOUT                                                           *venus-about*
