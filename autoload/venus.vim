@@ -105,16 +105,41 @@ fun! venus#CloseAll()
 endfun
 " }}}
 " Utility {{{
-fun! s:GetREPLAndStart()
- 	let repl_str = ""
+fun! venus#GetCellInfo() " [line, repl_str, [attributes]]
+	let start = search('^```[[:space:]]*[^[:space:]]', 'bWcn')
+	let end = search('^```[[:space:]]*$', 'Wn')
+
+	" Check that the cell is valid
+	" If there is no opening delimiter they will both return 0
+	if ((search('^```','bWcn') != start) ||
+	\   (search('^```','Wn')   != end)   ||
+	\   (search('^```','bWcn') == 0)     ||
+	\   (search('^```','Wn')   == 0)
+	\)
+		return [-1, -1, '', []]
+	endif
+
+	" ```python or ```{.python .cell} etc etc
+	let content = substitute(getline(start),
+				\ '\v```[[:space:]]*\{?(.{-})\}?[[:space:]]*$', '\1', '')
+	let attrs = map(split(content), "substitute(v:val, '^\\.', '', '')")
+	let repl_str = ''
 	for i in keys(g:venus_repls)
-		let start = search('^```'.i.'$','bWcn')
-		if start == search('^```','bWcn')
-			let repl_str = i
+		let idx = index(attrs, i)
+		if idx >= 0
+			let repl_str = remove(attrs, idx)
 			break
 		endif
 	endfor
-	return [repl_str, start]
+	return [start, end, repl_str, attrs]
+endfun
+
+fun! venus#SetCellInfo(info)
+	let start = venus#GetCellInfo()[0]
+	if start == -1
+		return -1
+	endif
+	call setline(start, '```' . a:info)
 endfun
 
 fun! venus#ClearCommandQueue()
@@ -164,18 +189,8 @@ endfun
 
 fun! venus#RunCellIntoMarkdown()
 	" Find out what REPL we should use
-	let [repl_str, start] = s:GetREPLAndStart()
-
-	let end = search('^```$','Wn')
-
-	" Check that the cell is valid
-	" If there is no opening delimiter they will both return 0
-	if !((search('^```','bWcn') == start) &&
-	\    (search('^```','Wn')   == end)   &&
-	\    (search('^```','bWcn') != 0)     &&
-	\    (search('^```','Wcn')  != 0)     &&
-	\    (repl_str != "")
-	\)
+	let [start, end, repl_str] = venus#GetCellInfo()[:2]
+	if start == -1
 		echom "Not in a valid cell"
 		return
 	endif
@@ -194,13 +209,6 @@ fun! venus#RunCellIntoMarkdown()
 		" Remove existing output
 		norm! j
 		s/```output\n\%(\%(```\)\@!.*\n\)*```\n//e
-		norm! k
-	endif
-
-	if search('```error','Wn') == line('.') + 1
-		" Remove existing output
-		norm! j
-		s/```error\n\%(\%(```\)\@!.*\n\)*```\n//e
 		norm! k
 	endif
 
@@ -355,10 +363,14 @@ endfun
 fun! venus#HaskellPreProcessor(lines)
 	return a:lines . "\n" . 'putStrLn "' . g:venus_delimiter . '"'
 endfun
+
+fun! venus#RPreProcessor(lines)
+	return a:lines . "\n" . 'putStrLn "' . g:venus_delimiter . '"'
+endfun
 " }}}
 " Variable Explorer {{{
 fun! venus#GetVarsOfCurrent()
-	let current = s:GetREPLAndStart()[0]
+	let current = venus#GetCellInfo()[2]
 	if current == ""
 		" Fallback to first running REPL we find
 		call venus#GetVars(keys(filter(
@@ -502,37 +514,55 @@ fun! venus#LoadJupyterNotebook()
 		return
 	endif
 
+	let ipynb_bufnr = bufnr()
 	let basename = expand('%:r')
 	let out = system("jupytext '" . basename . ".ipynb' "
 				\ ."--to md:pandoc "
-				\ ."--opt cell_metadata_filter=-all "
-				\ ."--opt notebook_metadata_filter=-all "
-				\ ."--opt comment_magics=true "
 				\ )
+				"\ ."--opt cell_metadata_filter=-all "     Pointless
+				"\ ."--opt notebook_metadata_filter=-all " Seems to break cells
+				"\ ."--opt comment_magics=true "           Doesn't work
 	if v:shell_error != 0
 		echoe "Conversion finished with errors:"
 		echon "\n" . out
 	else
 		execute "edit " . basename . ".md"
+		execute "bwipeout! " . ipynb_bufnr
 		let l:save_view = winsaveview()
-		g/^:::/d " Remove cell delimiters
+
+		" Enclose yaml in fold
+		norm! gg
+		let yaml_start = search('^---', 'cW')
+		let yaml_end = search('^---', 'Wn')
+		call append(yaml_start - 1, '<!-- Jupyter YAML {{{ -->')
+		call append(yaml_end + 1, '<!-- }}} -->')
+		" close fold
+		norm! zc
+
+		" Remove cell delimiters
+		g/^:::/d
+
 		" Fix highlighting issue
 		keeppatterns %s/\(\*\+\)[[:space:]]*\(.\{-}\)[[:space:]]*\1/\1\2\1/ge
-		" Fix code cells
+
+		" Fix code cell spacing (not required but neat)
 		keeppatterns %s/^```\zs[[:space:]]*//e
 
 		" Comment python magics (jupytext should be able to do this???)
 		norm! gg
 		while search('^%\+', 'cW') != 0
-			if s:GetREPLAndStart()[0] == 'python'
+			let cell_info = venus#GetCellInfo()
+			" WTF is this??? why can't there just be R blocks jesus
+			if match(getline('.'), '^%%R') != -1
+				call venus#SetCellInfo('R')
+				norm! dd
+			elseif venus#GetCellInfo()[2] == 'python'
 				keeppatterns s/^%/# %/
 			endif
 		endwhile
 
-		set ft=venus| " why is this required??
-		if g:venus_mappings " ????
-			call venus#LoadMappings()
-		endif
+		call venus#Start() " why is this required??
+
 		call winrestview(l:save_view)
 	endif
 endfun

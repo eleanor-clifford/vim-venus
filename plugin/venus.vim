@@ -35,10 +35,14 @@ let g:venus_delimiter_regex  = get(g:, 'venus_delimiter_regex', '=\+VENUS DELIMI
 let g:venus_ignorelist       = get(g:, 'venus_ignorelist', ['README.md'])
 
 " REPLs {{{
-let g:markdown_fenced_languages   = ['python', 'sh', 'haskell']
-" Note that `output_ignore` matches on 1 or more
-" preprocess (python) puts one empty line between all lines then removes them
-" when the 2nd line has equal or more indentation
+if exists('g:markdown_fenced_languages')
+	let g:markdown_fenced_languages = uniq(sort(g:markdown_fenced_languages
+				\ + ['python', 'sh', 'haskell', 'r']))
+else
+	let g:markdown_fenced_languages = ['python', 'sh', 'haskell', 'r']
+endif
+
+" Note that `output_ignore` matches on 1 or more occurences
 let g:venus_repls = get(g:, 'venus_repls', {
 \	"python": {
 \		"binary":        "python",
@@ -56,23 +60,31 @@ let g:venus_repls = get(g:, 'venus_repls', {
 \		"binary":        "sh",
 \		"preprocess":    "venus#ShellPreProcessor",
 \		"output_ignore": '^\(\([^ ]*\$\|>\)\+ *\)',
-\		"start_command": "",
-\		"vars_command":  "",
-\		"var_filter_rules": [],
 \	},
 \	"haskell": {
 \		"binary":        "ghci",
 \		"preprocess":    "venus#HaskellPreProcessor",
 \		"output_ignore": '^\(Prelude> *\|ghci> \)\+',
-\		"start_command": "",
-\		"vars_command":  "",
-\		"var_filter_rules": [],
+\	},
+\	"R": {
+\		"binary":        "R",
+\		"preprocess":    "venus#RPreProcessor",
+\		"output_ignore": '^\(> *\|\[\d\+\] *\)\+',
 \	},
 \})
 
-" Add some more things the user shouldn't care about
+" Add some more things the user shouldn't care about, and defaults
 for i in keys(g:venus_repls)
-	let g:venus_repls[i]["vars_waiting"] = 0
+	for k in [
+				\ ["start_command", ""],
+				\ ["vars_command", []],
+				\ ["var_filter_rules", []],
+				\ ["vars_waiting", 0],
+			\ ]
+		if ! exists('g:venus_repls[i][k[0]]')
+			let g:venus_repls[i][k[0]] = k[1]
+		endif
+	endfor
 endfor
 " }}}
 " Mappings {{{
