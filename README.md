@@ -2,7 +2,7 @@
 
 It's like Jupyter, but lighter, faster, and hotter. Integrates any language
 with a REPL along with  LaTeX into one markdown document. Currently python,
-shell, and haskell REPLs are supported.
+shell, haskell, and R REPLs are supported.
 
 ![Demo](demo.gif)
 
@@ -18,6 +18,8 @@ Plugin 'tim-clifford/vim-venus'
 
 - An installation of pandoc with xelatex (e.g. `pandoc` and `texlive-most` on
   Arch Linux
+
+- The REPLs you want to use (of course)
 
 - Linux (this may work on other operating systems, and I will review PRs aimed
   at them, but I do not intend to actively maintain them)
