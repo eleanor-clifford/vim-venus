@@ -34,6 +34,13 @@ let g:venus_delimiter_regex  = get(g:, 'venus_delimiter_regex', '=\+VENUS DELIMI
 
 let g:venus_ignorelist       = get(g:, 'venus_ignorelist', ['README.md'])
 
+" LSP {{{
+augroup venus_lsp
+	autocmd!
+	autocmd FileType venus autocmd InsertLeave <buffer=abuf>
+				\ call venus#MakeDiagnosticBuffers()
+augroup END
+" }}}
 " REPLs {{{
 if exists('g:markdown_fenced_languages')
 	let g:markdown_fenced_languages = uniq(sort(g:markdown_fenced_languages

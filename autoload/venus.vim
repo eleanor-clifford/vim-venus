@@ -158,6 +158,57 @@ fun! venus#GetRunningREPLs()
 	return repls
 endfun
 " }}}
+" LSP {{{
+fun! venus#GetFilteredBufferLines(repl_str)
+	let lines = getline(1, '$')
+	let in_cell = 0
+	for i in range(len(lines))
+		if in_cell
+			if match(lines[i] , '^```[[:space:]]*$') != -1
+				let in_cell = 0
+				let lines[i] = ''
+			endif
+		elseif match(lines[i], '^```.*'.a:repl_str) != -1
+			let in_cell = 1
+			let lines[i] = ''
+		else
+			let lines[i] = ''
+		endif
+	endfor
+	return lines
+endfun
+
+fun! venus#MakeDiagnosticBuffers()
+	let repls = venus#GetRunningREPLs()
+	let l:save_view = winsaveview()
+	let l:save_cursor = getcurpos()[1:]
+	for repl_str in repls
+		let cur_bufnr = bufnr()
+		if exists('g:venus_diagnostics_buffers['.bufnr().'][repl_str]')
+			let d_bufnr = bufnr("venus_diagnostics_".bufnr()."_".repl_str, 1)
+			silent execute d_bufnr . "buf"
+			1,$d
+			silent execute cur_bufnr . "buf"
+		else
+			if ! exists('g:venus_diagnostics_buffers[bufnr()]')
+				if ! exists('g:venus_diagnostics_buffers')
+					let g:venus_diagnostics_buffers = {}
+				endif
+				let g:venus_diagnostics_buffers[bufnr()] = {}
+			endif
+			let d_bufnr = bufnr("venus_diagnostics_".bufnr()."_".repl_str, 1)
+			call bufload(d_bufnr)
+			let g:venus_diagnostics_buffers[bufnr()][repl_str] = d_bufnr
+			call setbufvar(d_bufnr, "&filetype", repl_str)
+			call setbufvar(d_bufnr, "&buftype", "nofile")
+		endif
+		" This errors for some reason
+		silent! call appendbufline(d_bufnr, 0, venus#GetFilteredBufferLines(repl_str))
+	endfor
+	call winrestview(l:save_view)
+	call cursor(l:save_cursor)
+endfun
+" }}}
 " Run {{{
 fun! s:SendRawToREPL(repl_str, lines)
 	let repl = g:venus_repls[a:repl_str]
