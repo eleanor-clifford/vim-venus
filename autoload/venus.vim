@@ -97,15 +97,15 @@ fun! venus#Close(repl_str)
 endfun
 
 fun! venus#CloseAll()
-	for repl_str in keys(g:venus_repls)
-		if exists("g:venus_repls[repl_str].job")
+	for [repl_str, repl] in items(g:venus_repls)
+		if exists("repl.job")
 			call venus#Close(repl_str)
 		endif
 	endfor
 endfun
 " }}}
 " Utility {{{
-fun! venus#GetCellInfo() " [line, repl_str, [attributes]]
+fun! venus#GetCellInfo() " [start, end, repl_str, [attributes]]
 	let start = search('^```[[:space:]]*[^[:space:]]', 'bWcn')
 	let end = search('^```[[:space:]]*$', 'Wn')
 
@@ -150,9 +150,9 @@ endfun
 
 fun! venus#GetRunningREPLs()
 	let repls = []
-	for repl in keys(g:venus_repls)
-		if exists('g:venus_repls[repl].job')
-			let repls = repls + [repl]
+	for [repl_str, repl] in items(g:venus_repls)
+		if exists('repl.job')
+			let repls = repls + [repl_str]
 		endif
 	endfor
 	return repls
@@ -239,14 +239,14 @@ fun! s:OutputHandler(channel, msg, ...)
 
 	" Find out what REPL this channel refers to
 	let found_repl = 0
-	for repl_str in keys(g:venus_repls)
-		if exists('g:venus_repls[repl_str]["job"]')
+	for [repl_str, repl] in items(g:venus_repls)
+		if exists('repl.job')
 			if has("nvim")
-				if g:venus_repls[repl_str]["job"] == a:channel
+				if repl.job == a:channel
 					let found_repl = 1
 					break
 				endif
-			elseif job_getchannel(g:venus_repls[repl_str]["job"]) == a:channel
+			elseif job_getchannel(repl.job) == a:channel
 				let found_repl = 1
 				break
 			endif
@@ -318,15 +318,15 @@ fun! s:OutputHandler(channel, msg, ...)
 endfun
 
 fun! s:ExitHandler(job, ...)
-	for i in keys(g:venus_repls)
+	for repl in values(g:venus_repls)
 		" Also unlet in Close()
-		if exists("g:venus_repls[i].job")
+		if exists("repl.job")
 			if has("nvim")
-				if g:venus_repls[i].job == a:job
-					unlet g:venus_repls[i].job
+				if repl.job == a:job
+					unlet repl.job
 				endif
-			elseif job_getchannel(g:venus_repls[i].job) == a:channel
-				unlet g:venus_repls[i].job
+			elseif job_getchannel(repl.job) == a:channel
+				unlet repl.job
 			endif
 		endif
 	endfor
@@ -516,6 +516,10 @@ fun! venus#LoadJupyterNotebook()
 
 	let ipynb_bufnr = bufnr()
 	let basename = expand('%:r')
+	if filereadable(basename . ".md")
+		echoe "Refusing to overwrite " . basename . ".md"
+		return 1
+	endif
 	let out = system("jupytext '" . basename . ".ipynb' "
 				\ ."--to md:pandoc "
 				\ )
