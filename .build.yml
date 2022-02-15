@@ -1,0 +1,30 @@
+image: archlinux
+sources:
+  - https://git.sr.ht/~tcarrio/git-mirror
+  - https://git.sr.ht/~ecc/vim-venus
+environment:
+  GIT_TARGET_REPO: git@git.sr.ht:~ecc/vim-venus.git
+secrets:
+  - 9ee7c8f6-f330-46d7-8339-574c3d774548
+tasks:
+  - add-warning: |
+      cd vim-venus
+      git checkout master
+      # fuck all this so much
+      warning="
+
+      | :exclamation:  | This is a mirror of [https://git.sr.ht/~ecc/vim-venus](https://git.sr.ht/~ecc/vim-venus). Please refrain from using GitHub's issue and PR system.  |
+      |----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
+
+      "
+      if test -f README.md; then
+          echo "$warning" | cat - README.md > README2.md # save it, I literally do not care
+      else
+          echo "$warning" > README2.md
+      fi
+      # fuck all this redirection shit
+      mv README2.md README.md
+      git add README.md
+      git commit -m "[builds.sr.ht] Add mirror warning to README.md"
+
+  - mirror: git-mirror/git-mirror.sh vim-venus
