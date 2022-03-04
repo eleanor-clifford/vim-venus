@@ -268,11 +268,9 @@ fun! s:OutputHandler(channel, msg, ...)
 		" TODO: someone look at this later I'm just done with it
 
 		if has("nvim")
-			let m = substitute(m,
-					\ g:venus_repls[repl_str].output_ignore, "", "g")
+			let m = substitute(m, repl.output_ignore, "", "g")
 		else
-			if match(m, g:venus_repls[repl_str].output_ignore, "", "g")
-					\ != -1
+			if match(m, repl.output_ignore, "", "g") != -1
 				continue
 			endif
 		endif
@@ -334,26 +332,10 @@ endfun
 " }}}
 " Preprocessors {{{
 fun! venus#PythonPreProcessor(lines)
-	let lines = split(a:lines, '\n')
-	let r = []
-	let space_last = ""
-	for l in lines
-		if match(l, "^[[:space:]]*$") == -1
-			" only process nonempty lines
-			let space = matchstr(l, "^[[:space:]]*")
-			if match(space, "^".space_last) != -1
-				" This line is indented equal or more than the previous one
-				let r = r + [l]
-			else
-				" We need an extra line
-				let r = r + ["", l]
-			endif
-		endif
-		let space_last = space
-	endfor
-	" add delimiter line at the end
-	return join(r + ['', 'print("'.g:venus_delimiter.'")'],
-		\ "\n")
+	"let lines = a:lines . "\n" . 'print("'.g:venus_delimiter.'")' . "\n"
+	return 'exec(r"""' . "\n" .
+				\ substitute(a:lines, '"""', '"""'."'".'"""'."'".'r"""', 'g')
+				\.'""")' . "\n"
 endfun
 
 fun! venus#ShellPreProcessor(lines)
