@@ -195,8 +195,8 @@ KNOWN ISSUES                                             *venus-known-issues*
 
 - Occasionally erroneous newlines appear in the output
 
-- Occasionally when restarting the REPLs the the intro text ends up in an
-  output block.
+- calling venus#RestartAndMake() causes an off-by-one error in the output
+  blocks. (?!?)
 
 ==============================================================================
 ABOUT                                                           *venus-about*

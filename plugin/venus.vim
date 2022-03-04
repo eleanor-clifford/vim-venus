@@ -42,13 +42,16 @@ else
 	let g:markdown_fenced_languages = ['python', 'sh', 'haskell', 'r']
 endif
 
-" Note that `output_ignore` matches on 1 or more occurences
+" Note that `output_ignore` should match 1 or more occurences
 let g:venus_repls = get(g:, 'venus_repls', {
 \	"python": {
 \		"binary":        "python",
 \		"preprocess":    "venus#PythonPreProcessor",
-\		"output_ignore": '^\%(\%(>>>\|\.\.\.\)\+ *\)\+',
-\		"start_command": "import json",
+\		"output_ignore": '',
+\		"start_command": "import json"
+\		           ."\n"."import sys"
+\		           ."\n"."sys.ps1 = '" . g:venus_delimiter . "'"
+\		           ."\n"."sys.ps2 = ''",
 \		"vars_command":  "print(json.dumps("
 \		                ."{x:str(y) for x, y in globals().items()}))",
 \		"var_filter_rules": [
