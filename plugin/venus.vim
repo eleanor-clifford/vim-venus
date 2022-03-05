@@ -23,7 +23,7 @@ let g:loaded_venus = 1
 " Options
 let s:plugindir              = expand('<sfile>:p:h:h')
 let g:pandoc_defaults_file   = get(g:, 'pandoc_defaults_file',   s:plugindir.'/pandoc/pandoc.yaml')
-let g:pandoc_header_dir      = get(g:, 'pandoc_header_dir',      s:plugindir.'/pandoc/headers')
+let g:pandoc_headers         = get(g:, 'pandoc_headers',         s:plugindir.'/pandoc/headers')
 let g:pandoc_options         = get(g:, 'pandoc_options',         '')
 
 let g:venus_vimtex_enabled   = get(g:, 'venus_vimtex_enabled', 	  1)
@@ -125,7 +125,7 @@ if g:venus_vimtex_enabled
 	if !g:venus_vimtex_full
 		" Disable insert mode mappings (conflict on '`')
 		let g:vimtex_imaps_enabled = 0
-		" Disable <leader>l mappings
+		" Disable <leader>l mappings, [ mappings, i mappings
 		let g:vimtex_mappings_disable = {
 		\	'n': [
 		\		'<localleader>li',
@@ -150,8 +150,69 @@ if g:venus_vimtex_enabled
 		\		'<localleader>lX',
 		\		'<localleader>ls',
 		\		'<localleader>la',
+		\		'[*',
+		\		'[/',
+		\		'[r',
+		\		'[R',
+		\		'[n',
+		\		'[N',
+		\		'[m',
+		\		'[M',
+		\		'[[',
+		\		'[]',
+		\		']*',
+		\		']/',
+		\		']r',
+		\		']R',
+		\		']n',
+		\		']N',
+		\		']m',
+		\		']M',
+		\		'][',
+		\		']]',
 		\	], 'x': [
 		\		'<localleader>lL',
+		\		'[*',
+		\		'[/',
+		\		'[r',
+		\		'[R',
+		\		'[n',
+		\		'[N',
+		\		'[m',
+		\		'[M',
+		\		'[[',
+		\		'[]',
+		\		']*',
+		\		']/',
+		\		']r',
+		\		']R',
+		\		']n',
+		\		']N',
+		\		']m',
+		\		']M',
+		\		'][',
+		\		']]',
+		\	], 'o': [
+		\		'[*',
+		\		'[/',
+		\		'[r',
+		\		'[R',
+		\		'[n',
+		\		'[N',
+		\		'[m',
+		\		'[M',
+		\		'[[',
+		\		'[]',
+		\		']*',
+		\		']/',
+		\		']r',
+		\		']R',
+		\		']n',
+		\		']N',
+		\		']m',
+		\		']M',
+		\		'][',
+		\		']]',
 		\	]
 		\}
 	endif

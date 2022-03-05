@@ -83,8 +83,8 @@ See |venus-defaults| for the default value of each option
 g:pandoc_defaults_file                               *g:pandoc_defaults_file*
                 Location of pandoc yaml configuration file to use.
 
-g:pandoc_header_dir                                     *g:pandoc_header_dir*
-                Directory of pandoc tex headers to include.
+g:pandoc_headers                                           *g:pandoc_headers*
+                Directory or list of pandoc tex headers to include.
 
 g:pandoc_options                                           *g:pandoc_options*
                 Command line options to pass to pandoc.
@@ -144,7 +144,7 @@ These are the default options. See also |g:venus_repls| for an explanation of
 the REPL dictionary >
 
     let g:pandoc_defaults_file  = s:plugindir.'/pandoc/pandoc.yaml'
-    let g:pandoc_header_dir  = s:plugindir.'/pandoc/headers'
+    let g:pandoc_headers  = s:plugindir.'/pandoc/headers'
     let g:pandoc_options  = ''
 
     let g:venus_vimtex_enabled  = 1

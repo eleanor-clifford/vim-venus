@@ -208,11 +208,11 @@ fun! venus#RunCellIntoMarkdown()
 	if search('```output','Wn') == line('.') + 1
 		" Remove existing output
 		norm! j
-		s/```output\n\%(\%(```\)\@!.*\n\)*```\n//e
-		norm! k
+		s/^```output.*\n\zs\_.\{-}\ze```//e
+		norm! kk
+	else
+		call append(line('.'), ['```output','```'])
 	endif
-
-	call append(line('.'), ['```output','```'])
 
 	call s:RunInREPL(repl_str, lines, line('.') + 1)
 endfun
@@ -349,6 +349,39 @@ endfun
 fun! venus#RPreProcessor(lines)
 	return a:lines . "\n" . 'putStrLn "' . g:venus_delimiter . '"'
 endfun
+
+fun! venus#PandocPreProcessor()
+	let lines = getline(1, '$')
+	let processed_lines = []
+	let in_cell = v:false " statefulness goes brrrr
+	let cell_header = ''
+	for l in lines
+		if match(l, '^```') != -1
+			if ! in_cell
+				let cell_header = l
+
+				if match(cell_header, 'hidden') != -1
+					let processed_lines += ['<!--', l]
+				else
+					let processed_lines += [l]
+				endif
+			else
+				if match(cell_header, 'hidden') != -1
+					let processed_lines += [l, '-->']
+				else
+					let processed_lines += [l]
+				endif
+				let cell_header = '' " just feel like we should clean up
+			endif
+			let in_cell = ! in_cell
+		else
+			let processed_lines += [l]
+		endif
+	endfor
+	let fname = substitute(system("mktemp --suffix=.md"), "\n", "", "g")
+	call writefile(processed_lines, fname)
+	return fname
+endfun
 " }}}
 " Variable Explorer {{{
 fun! venus#GetVarsOfCurrent()
@@ -385,11 +418,12 @@ fun! s:DisplayVars(msg, repl_str)
 endfun
 " }}}
 " Pandoc {{{
-fun! s:BuildPandocCmd()
+fun! venus#GetPandocCmd(fname)
+
 	let make_cmd = 'tmpfile=$(mktemp); '
 				\ .'export plugindir=' . s:plugindir . '; '
 				\ .'envsubst <'.g:pandoc_defaults_file . ' > $tmpfile; '
-				\ ."pandoc '".expand('%:r').".md' -o '".expand('%:r')."'.pdf "
+				\ ."pandoc '".a:fname."' -o '".expand('%:r')."'.pdf "
 
 	if g:pandoc_options != ''
 		let make_cmd = make_cmd
@@ -401,19 +435,25 @@ fun! s:BuildPandocCmd()
 			\ . ' --defaults $tmpfile'
 	endif
 
-	if g:pandoc_header_dir != ''
+	if type(g:pandoc_headers) == type('') && g:pandoc_headers != ''
 		let files = split(system("ls ".g:pandoc_header_dir), '[\_[:space:]]\+')
 		call map(files, 'g:pandoc_header_dir."/".v:val')
 		call filter(files, 'v:val != ""')
 		let make_cmd = make_cmd . ' -H ' . join(files, ' -H ') . ' '
+	elseif type(g:pandoc_headers) == type([]) && g:pandoc_headers != []
+		let make_cmd = make_cmd . ' -H ' . join(g:pandoc_headers, ' -H ') . ' '
 	endif
 
+	let make_cmd = make_cmd ."; rm -f ".a:fname
 	return make_cmd
 endfun
 
 fun! venus#PandocMake()
 	silent write
-	let make_cmd = s:BuildPandocCmd()
+
+	let fname = venus#PandocPreProcessor()
+	let make_cmd = venus#GetPandocCmd(fname)
+
 	if has("nvim")
 		let g:venus_pandoc_job = jobstart(
 		\	make_cmd, {
@@ -452,14 +492,22 @@ endfun
 
 fun! s:PandocExitHandler(channel, exit_code, ...)
 	if a:exit_code != 0
-		echon "Compilation finished with errors: \n"
-					\ . join(s:pandoc_output, "\n")
+		if has('nvim')
+			call nvim_echo([["Compilation finished with errors: \n"]]
+						\ + map(copy(s:pandoc_output), '[v:val . "\n"]'),
+						\ v:false, [])
+		else
+			echoe "Compilation finished with errors: \n"
+						\ . join(s:pandoc_output, "\n")
+		endif
 	else
 		echom "Compilation finished."
 	endif
 	unlet s:pandoc_output
 	if exists("g:venus_pandoc_callback")
-		call call(g:venus_pandoc_callback, [])
+		for c in g:venus_pandoc_callback
+			call call(c, [])
+		endfor
 	endif
 endfun
 " }}}
@@ -556,8 +604,12 @@ endfun
 " Aggregate functions {{{
 fun! venus#Make()
 	call venus#RunAllIntoMarkdown()
-	let g:venus_command_queue = g:venus_command_queue
-				\ + [['callback', 'venus#PandocMake', -1]]
+	if exists('g:venus_command_queue')
+		let g:venus_command_queue = g:venus_command_queue
+					\ + [['callback', 'venus#PandocMake', -1]]
+	else
+		call venus#PandocMake()
+	endif
 endfun
 
 fun! venus#RestartAndMake()
