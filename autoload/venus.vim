@@ -444,7 +444,7 @@ fun! venus#GetPandocCmd(fname)
 		let make_cmd = make_cmd . ' -H ' . join(g:pandoc_headers, ' -H ') . ' '
 	endif
 
-	let make_cmd = make_cmd ."; rm -f ".a:fname
+	let make_cmd = make_cmd ."; rval=$?; rm -f ".a:fname."; exit $rval"
 	return make_cmd
 endfun
 
