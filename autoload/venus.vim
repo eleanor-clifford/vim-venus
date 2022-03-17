@@ -568,8 +568,8 @@ fun! venus#LoadJupyterNotebook()
 		norm! gg
 		let yaml_start = search('^---', 'cW')
 		let yaml_end = search('^---', 'Wn')
-		call append(yaml_start - 1, '<!-- Jupyter YAML {{{ -->')
-		call append(yaml_end + 1, '<!-- }}} -->')
+		call append(yaml_start - 1, '<!-- Jupyter YAML {{{')
+		call append(yaml_end + 1, '}}} -->')
 		" close fold
 		norm! zc
 
@@ -594,6 +594,9 @@ fun! venus#LoadJupyterNotebook()
 				keeppatterns s/^%/# %/
 			endif
 		endwhile
+
+		" fix sections
+		keeppatterns %s/\v^\#.*\{#%(sec:)@<!\zs\ze.*\}[[:space:]]*$/sec:/e
 
 		call venus#Start() " why is this required??
 
