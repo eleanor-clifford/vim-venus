@@ -17,6 +17,8 @@
 
 let s:plugindir = expand('<sfile>:p:h:h')
 
+let s:cell_regex = '^```\%(output\|error\)\@!\zs[^ ]\+\ze\( \|$\)\%(.\{-}noexec\)\@!.*$'
+
 " Starting and Closing {{{
 fun! venus#StartREPL(repl_str)
 	let repl = g:venus_repls[a:repl_str]
@@ -64,12 +66,13 @@ fun! venus#Start()
 	" Start REPLs which we can detect. Note uniq requires sort
 	for repl_str in uniq(sort(filter(map(
 	\		getline(0, '$'),
-	\		'matchstr(v:val, "^```\\%(output\\|error\\)\\@!\\zs.\\+$")'
+	\		'matchstr(v:val, s:cell_regex)'
 	\	), 'v:val != ""'
 	\)))
 		if index(keys(g:venus_repls), repl_str) == -1
 			echo "No REPL defined for " . repl_str
 		else
+			echom "[DEBUG] starting " . repl_str
 			call venus#StartREPL(repl_str)
 		endif
 	endfor
@@ -219,7 +222,7 @@ endfun
 
 fun! venus#RunAllIntoMarkdown()
 	norm! gg
-	while search('^```\%(output\|error\)\@!.\+$', 'cW') != 0
+	while search(s:cell_regex, 'cW') != 0
 		if venus#RunCellIntoMarkdown() == 1
 			return 1
 		endif
@@ -333,6 +336,8 @@ endfun
 " Preprocessors {{{
 fun! venus#PythonPreProcessor(lines)
 	"let lines = a:lines . "\n" . 'print("'.g:venus_delimiter.'")' . "\n"
+	"
+	" what the fuck is this
 	return 'exec(r"""' . "\n" .
 				\ substitute(a:lines, '"""', '"""'."'".'"""'."'".'r"""', 'g')
 				\.'""")' . "\n"
@@ -363,13 +368,13 @@ fun! venus#PandocPreProcessor()
 				if match(cell_header, 'hidden') != -1
 					let processed_lines += ['<!--', l]
 				else
-					let processed_lines += [l]
+					let processed_lines += [split(l, " ")[0]]
 				endif
 			else
 				if match(cell_header, 'hidden') != -1
 					let processed_lines += [l, '-->']
 				else
-					let processed_lines += [l]
+					let processed_lines += [split(l, " ")[0]]
 				endif
 				let cell_header = '' " just feel like we should clean up
 			endif
@@ -436,8 +441,8 @@ fun! venus#GetPandocCmd(fname)
 	endif
 
 	if type(g:pandoc_headers) == type('') && g:pandoc_headers != ''
-		let files = split(system("ls ".g:pandoc_header_dir), '[\_[:space:]]\+')
-		call map(files, 'g:pandoc_header_dir."/".v:val')
+		let files = split(system("ls ".g:pandoc_headers), '[\_[:space:]]\+')
+		call map(files, 'g:pandoc_headers."/".v:val')
 		call filter(files, 'v:val != ""')
 		let make_cmd = make_cmd . ' -H ' . join(files, ' -H ') . ' '
 	elseif type(g:pandoc_headers) == type([]) && g:pandoc_headers != []
