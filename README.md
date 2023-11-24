@@ -1,8 +1,9 @@
 # Venus
 
-It's like Jupyter, but lighter, faster, and hotter. Integrates any language
-with a REPL along with  LaTeX into one markdown document. Currently python,
-shell, haskell, and R REPLs are supported.
+It's like Jupyter, but lighter, faster, hotter, and sexier. Integrates any
+language with a REPL along with  LaTeX into one markdown document. Currently
+python, shell, haskell, and R REPLs are supported, but arbitrary REPLs can be
+added.
 
 ![Demo](demo.gif)
 
