@@ -1,3 +1,9 @@
+
+
+| :exclamation:  | This is a mirror of [https://git.sr.ht/~ecc/vim-venus](https://git.sr.ht/~ecc/vim-venus). Please refrain from using GitHub's issue and PR system.  |
+|----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
+
+
 # Venus
 
 It's like Jupyter, but lighter, faster, hotter, and sexier. Integrates any
