@@ -12,12 +12,12 @@ added.
 Use your favourite plugin manager. For example with
 [Vundle.vim](https://github.com/VundleVim/Vundle.vim):
 ```vimscript
-Plugin 'https://git.sr.ht/~tim-clifford/vim-venus'
+Plugin 'https://git.sr.ht/~ecc/vim-venus'
 ```
 
 If you end up using it frequently, please subscribe to the announcement mailing
 list by pinging
-[~tim-clifford/vim-venus-announce+subscribe@lists.sr.ht](mailto:~tim-clifford/vim-venus-announce+subscribe@lists.sr.ht),
+[~ecc/vim-venus-announce+subscribe@lists.sr.ht](mailto:~ecc/vim-venus-announce+subscribe@lists.sr.ht),
 as there might be some breaking changes down the line.
 
 # Dependencies

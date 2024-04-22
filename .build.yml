@@ -1,9 +1,9 @@
 image: archlinux
 sources:
   - https://git.sr.ht/~tcarrio/git-mirror
-  - https://git.sr.ht/~tim-clifford/vim-venus
+  - https://git.sr.ht/~ecc/vim-venus
 environment:
-  GIT_TARGET_REPO: git@github.com:tim-clifford/vim-venus.git
+  GIT_TARGET_REPO: git@github.com:eleanor-clifford/vim-venus.git
 secrets:
   - 9ee7c8f6-f330-46d7-8339-574c3d774548
 tasks:
@@ -13,7 +13,7 @@ tasks:
       # fuck all this so much
       warning="
 
-      | :exclamation:  | This is a mirror of [https://git.sr.ht/~tim-clifford/vim-venus](https://git.sr.ht/~tim-clifford/vim-venus). Please refrain from using GitHub's issue and PR system.  |
+      | :exclamation:  | This is a mirror of [https://git.sr.ht/~ecc/vim-venus](https://git.sr.ht/~ecc/vim-venus). Please refrain from using GitHub's issue and PR system.  |
       |----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
 
       "
