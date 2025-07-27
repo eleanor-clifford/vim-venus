@@ -3,7 +3,7 @@ sources:
   - https://git.sr.ht/~tcarrio/git-mirror
   - https://git.sr.ht/~ecc/vim-venus
 environment:
-  GIT_TARGET_REPO: git@git.sr.ht:~ecc/vim-venus.git
+  GIT_TARGET_REPO: git@github.com:eleanor-clifford/vim-venus.git
 secrets:
   - 9ee7c8f6-f330-46d7-8339-574c3d774548
 tasks:
