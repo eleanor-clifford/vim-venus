@@ -26,53 +26,51 @@ let g:pandoc_defaults_file   = get(g:, 'pandoc_defaults_file',   s:plugindir.'/p
 let g:pandoc_headers         = get(g:, 'pandoc_headers',         s:plugindir.'/pandoc/headers')
 let g:pandoc_options         = get(g:, 'pandoc_options',         '')
 
-let g:venus_vimtex_enabled   = get(g:, 'venus_vimtex_enabled', 	  1)
-let g:venus_vimtex_full      = get(g:, 'venus_vimtex_full',    	  0)
-let g:venus_mappings         = get(g:, 'venus_mappings',       	  1)
-let g:venus_delimiter        = get(g:, 'venus_delimiter', '========VENUS DELIMITER========')
-let g:venus_delimiter_regex  = get(g:, 'venus_delimiter_regex', '=\+VENUS DELIMITER=\+')
+let g:venus_vimtex_enabled   = get(g:, 'venus_vimtex_enabled',   1)
+let g:venus_vimtex_full      = get(g:, 'venus_vimtex_full',      0)
+let g:venus_mappings         = get(g:, 'venus_mappings',         1)
 
 let g:venus_ignorelist       = get(g:, 'venus_ignorelist', ['README.md'])
 
 " REPLs {{{
 if exists('g:markdown_fenced_languages')
 	let g:markdown_fenced_languages = uniq(sort(g:markdown_fenced_languages
-				\ + ['python', 'sh', 'haskell', 'r']))
+				\ + ['python', 'sh', 'bash', 'zsh']))
 else
-	let g:markdown_fenced_languages = ['python', 'sh', 'haskell', 'r']
+	let g:markdown_fenced_languages = ['python', 'sh', 'bash', 'zsh']
 endif
 
-" Note that `output_ignore` should match 1 or more occurences
 let g:venus_repls = get(g:, 'venus_repls', {
 \	"python": {
-\		"binary":        "python",
-\		"preprocess":    "venus#PythonPreProcessor",
-\		"output_ignore": '',
-\		"start_command": "import json"
-\		           ."\n"."import sys"
-\		           ."\n"."sys.ps1 = '" . g:venus_delimiter . "'"
-\		           ."\n"."sys.ps2 = ''",
+\		"runner": ["/usr/bin/env", "python3", s:plugindir.'/runners/python'],
 \		"vars_command":  "print(json.dumps("
 \		                ."{x:str(y) for x, y in globals().items()}))",
 \		"var_filter_rules": [
 \			'v:key[0] != "_"',
+\			'v:key[0:4] != "venus"',
 \			'v:val[0:6] != "<module"',
 \		],
 \	},
 \	"sh": {
-\		"binary":        "sh",
-\		"preprocess":    "venus#ShellPreProcessor",
-\		"output_ignore": '^\(\([^ ]*\$\|>\)\+ *\)',
+\		"runner": ["/bin/sh", s:plugindir.'/runners/shell'],
+\		"vars_command": "env | jq -Rnc '[inputs | split(\"=\") | { (.[0]): .[1] }] | add'",
+\		"var_filter_rules": [
+\			'v:key[0:4] != "venus"',
+\		],
 \	},
-\	"haskell": {
-\		"binary":        "ghci",
-\		"preprocess":    "venus#HaskellPreProcessor",
-\		"output_ignore": '^\(Prelude> *\|ghci> \)\+',
+\	"bash": {
+\		"runner": ["/usr/bin/env", "bash", s:plugindir.'/runners/shell'],
+\		"vars_command": "env | jq -Rnc '[inputs | split(\"=\") | { (.[0]): .[1] }] | add'",
+\		"var_filter_rules": [
+\			'v:key[0:4] != "venus"',
+\		],
 \	},
-\	"R": {
-\		"binary":        "R",
-\		"preprocess":    "venus#RPreProcessor",
-\		"output_ignore": '^\(> *\|\[\d\+\] *\)\+',
+\	"zsh": {
+\		"runner": ["/usr/bin/env", "zsh", s:plugindir.'/runners/shell'],
+\		"vars_command": "env | jq -Rnc '[inputs | split(\"=\") | { (.[0]): .[1] }] | add'",
+\		"var_filter_rules": [
+\			'v:key[0:4] != "venus"',
+\		],
 \	},
 \})
 
@@ -80,7 +78,6 @@ let g:venus_repls = get(g:, 'venus_repls', {
 for i in keys(g:venus_repls)
 	for k in [
 				\ ["start_command", ""],
-				\ ["vars_command", []],
 				\ ["var_filter_rules", []],
 				\ ["vars_waiting", 0],
 			\ ]

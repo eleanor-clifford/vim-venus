@@ -1,0 +1,23 @@
+# vi: set ft=sh :
+venus_tmp_dir="$(mktemp -d)"
+mkfifo "$venus_tmp_dir/fifo"
+
+cleanup() {
+	rm -rf "$venus_tmp_dir"
+	exit 0
+}
+
+trap cleanup EXIT INT HUP TERM
+
+{
+	while read -r input_json; do
+		eval "$(printf '%s\n' "$input_json" | jq -r)" >"$venus_tmp_dir/fifo" 2>&1
+	done
+} | {
+	while true; do
+		while read -r output_line; do
+			printf '%s\n' "$output_line" | jq -cR '{"output": .}'
+		done <"$venus_tmp_dir/fifo"
+		echo '{"state": "done"}'
+	done
+}

@@ -31,18 +31,19 @@ fun! venus#StartREPL(repl_str)
 	if has("nvim")
 		" Use stty to remove the echos
 		let g:venus_repls[a:repl_str].job = jobstart(
-		\	"sh -sc 'stty -echo; " . repl.binary . "'", {
+		\	repl.runner, {
 		\		"on_stdout":  function('s:OutputHandler'),
+		\		"on_stderr":  function('s:OutputHandler'),
 		\		"on_exit":    function('s:ExitHandler'),
-		\		"pty":        1,
 		\	})
 	else
 		let g:venus_repls[a:repl_str].job = job_start(
-		\	repl.binary, {
+		\	repl.runner, {
 		\		"callback":  function('s:OutputHandler'),
 		\		"out_io":    "buffer",
 		\		"out_name":  a:repl_str,
-		\		"pty":       1
+		\		"err_io":    "buffer",
+		\		"err_name":  a:repl_str,
 		\	})
 	endif
 
@@ -72,7 +73,7 @@ fun! venus#Start()
 		if index(keys(g:venus_repls), repl_str) == -1
 			echo "No REPL defined for " . repl_str
 		else
-			echom "[DEBUG] starting " . repl_str
+			"echom "[DEBUG] starting " . repl_str
 			call venus#StartREPL(repl_str)
 		endif
 	endfor
@@ -172,9 +173,12 @@ fun! s:SendRawToREPL(repl_str, lines)
 endfun
 
 fun! s:RunInREPL(repl_str, lines, line_to_append)
-
 	let repl = g:venus_repls[a:repl_str]
-	let lines = call(repl.preprocess, [a:lines])
+	let lines = a:lines
+	if exists('repl.preprocess')
+		let lines = call(repl.preprocess, [lines])
+	endif
+	let lines = json_encode(lines)
 
 	" Send the command to the queue
 	if exists("g:venus_command_queue")
@@ -232,13 +236,10 @@ endfun
 " }}}
 " Handlers {{{
 fun! s:OutputHandler(channel, msg, ...)
-	" In nvim channels, there is no guarantee of one string per line
+	let msg = a:msg
 	if has("nvim")
-		" Combine strings, replacing '' and '' with a newline
-		let msg = split(join(a:msg, ''), '')
-	else
-		let msg = [a:msg]
-	endif
+		let msg = join(msg, '')
+	end
 
 	" Find out what REPL this channel refers to
 	let found_repl = 0
@@ -260,30 +261,33 @@ fun! s:OutputHandler(channel, msg, ...)
 		return 1
 	endif
 
-	for m_loop in msg
-		" Please just don't ask, I don't have the answers
-		" Something about bracketed paste mode
-		let m = substitute(m_loop, "[?2004h", "", "g")
-		let m = substitute(m, "[?2004l", "", "g")
-		" ANSI color codes
-		let m = substitute(m, '\e\[[0-9;]\+[mK]', "", "g")
+	if ! exists('repl.output_buffer')
+		let repl.output_buffer = ""
+	endif
+	let repl.output_buffer = repl.output_buffer..msg
 
-		" TODO: someone look at this later I'm just done with it
+	let events = []
 
-		if has("nvim")
-			let m = substitute(m, repl.output_ignore, "", "g")
+	while v:true
+		let out = v:null
+		for i in range(len(repl.output_buffer))
+			try
+				let out = json_decode(repl.output_buffer[0:i])
+				break
+			catch
+			endtry
+		endfor
+
+		if type(out) == type(v:null) && out == v:null
+			break
 		else
-			if match(m, repl.output_ignore, "", "g") != -1
-				continue
-			endif
+			let events = events + [out]
+			let repl.output_buffer = repl.output_buffer[i+1:]
 		endif
+	endwhile
 
-		" If we now have an empty string, and didn't before, we should ignore it
-		if m == '' && m != m_loop
-			continue
-		endif
-
-		if match(m, g:venus_delimiter_regex) != -1
+	for event in events
+		if exists("event.state") && event.state == "done"
 			let g:venus_command_queue = g:venus_command_queue[1:]
 
 			if len(g:venus_command_queue) > 0
@@ -298,22 +302,33 @@ fun! s:OutputHandler(channel, msg, ...)
 								\ g:venus_command_queue[0][1])
 				endif
 			endif
-		elseif g:venus_repls[repl_str].vars_waiting
-			let g:venus_repls[repl_str].vars_waiting = 0
-			call s:DisplayVars(m, repl_str)
-		elseif len(g:venus_command_queue) > 0 &&
-					\ g:venus_command_queue[0][2] != -1
-			call append(g:venus_command_queue[0][2], m)
-			let g:venus_command_queue[0][2] += 1
+		elseif !exists('event.output')
+			echoe "Unknown venus event "..string(event)
+		else
+			let line = event.output
 
-			" Handle line numbers of other running REPLs
-			for i in range(len(g:venus_command_queue))
-				if g:venus_command_queue[i][2] >
-						\ g:venus_command_queue[0][2]
-					let g:venus_command_queue[i][2] =
-								\ g:venus_command_queue[i][2] + 1
+			if g:venus_repls[repl_str].vars_waiting
+				let g:venus_repls[repl_str].vars_waiting = 0
+				call s:DisplayVars(line, repl_str)
+			elseif len(g:venus_command_queue) > 0 &&
+						\ g:venus_command_queue[0][2] != -1
+
+				if stridx(line, "\n") != -1
+					echom "FIXME: outputs are supposed to be line buffered"
 				endif
-			endfor
+
+				call append(g:venus_command_queue[0][2], line)
+				let g:venus_command_queue[0][2] += 1
+
+				" Handle line numbers of other running REPLs
+				for i in range(len(g:venus_command_queue))
+					if g:venus_command_queue[i][2] >
+							\ g:venus_command_queue[0][2]
+						let g:venus_command_queue[i][2] =
+									\ g:venus_command_queue[i][2] + 1
+					endif
+				endfor
+			endif
 		endif
 	endfor
 endfun
@@ -334,26 +349,6 @@ fun! s:ExitHandler(job, ...)
 endfun
 " }}}
 " Preprocessors {{{
-fun! venus#PythonPreProcessor(lines)
-	"let lines = a:lines . "\n" . 'print("'.g:venus_delimiter.'")' . "\n"
-	"
-	" what the fuck is this
-	return 'exec(r"""' . "\n" .
-				\ substitute(a:lines, '"""', '"""'."'".'"""'."'".'r"""', 'g')
-				\.'""")' . "\n"
-endfun
-
-fun! venus#ShellPreProcessor(lines)
-	return a:lines . "\necho " . g:venus_delimiter
-endfun
-
-fun! venus#HaskellPreProcessor(lines)
-	return a:lines . "\n" . 'putStrLn "' . g:venus_delimiter . '"'
-endfun
-
-fun! venus#RPreProcessor(lines)
-	return a:lines . "\n" . 'putStrLn "' . g:venus_delimiter . '"'
-endfun
 
 fun! venus#PandocPreProcessor()
 	let lines = getline(1, '$')
@@ -391,11 +386,12 @@ endfun
 " Variable Explorer {{{
 fun! venus#GetVarsOfCurrent()
 	let current = venus#GetCellInfo()[2]
+
 	if current == ""
 		" Fallback to first running REPL we find
 		call venus#GetVars(keys(filter(
 		\	copy(g:venus_repls),
-		\	"exists('".'v:val["job"]'."')"
+		\	"exists('".'v:val["job"]'."') && exists('".'v:val["vars_command"]'."')"
 		\))[0])
 	else
 		call venus#GetVars(current)
@@ -403,6 +399,9 @@ fun! venus#GetVarsOfCurrent()
 endfun
 
 fun! venus#GetVars(repl_str)
+	if ! exists("g:venus_repls[a:repl_str].vars_command")
+		return 1
+	endif
 	let g:venus_repls[a:repl_str].vars_waiting = 1
 	call s:RunInREPL(
 	\	a:repl_str,
@@ -472,7 +471,7 @@ fun! venus#PandocMake()
 		\		"callback":  function('s:PandocOutputHandler'),
 		\		"exit_cb":   function('s:PandocExitHandler'),
 		\		"out_io":    "buffer",
-		\		"out_name":  "test",
+		\		"out_name":  "pandoc",
 		\		"pty":       1
 		\	})
 	endif
@@ -623,8 +622,6 @@ endfun
 fun! venus#RestartAndMake()
 	call venus#CloseAll()
 	call venus#Start()
-	call venus#RunAllIntoMarkdown()
-	let g:venus_command_queue = g:venus_command_queue
-				\ + [['callback', 'venus#PandocMake', -1]]
+	call venus#Make()
 endfun
 " }}}

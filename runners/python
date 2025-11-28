@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+
+import sys
+import json
+import traceback
+import contextlib
+import typing
+
+
+class venus_OutputHandler(typing.IO):
+	output = sys.stdout
+	buffer = ""
+
+	def _write(self, text):
+		self.output.write(json.dumps({
+			"output": text
+		}) + "\n")
+
+	def write(self, text):
+		out, nl, buffered = text.rpartition("\n")
+
+		if nl:
+			self._write(self.buffer + out)
+			self.buffer = ""
+
+		self.buffer += buffered
+
+	def flush(self):
+		if self.buffer:
+			self._write(self.buffer.read())
+			self._write("NOEOL")
+		return self.output.flush()
+
+
+venus_output_handler = venus_OutputHandler()
+while True:
+	if (venus_input := sys.stdin.readline()):
+		venus_input = json.loads(venus_input)
+		try:
+			with contextlib.redirect_stdout(venus_output_handler):
+				with contextlib.redirect_stderr(venus_output_handler):
+					exec(venus_input)
+		except BaseException:
+			venus_output_handler.write(traceback.format_exc())
+		finally:
+			venus_output_handler.flush()
+
+		print(json.dumps({
+			"state": "done"
+		}), flush=True)

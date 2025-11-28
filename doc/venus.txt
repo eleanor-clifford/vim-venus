@@ -100,14 +100,12 @@ g:venus_repls                                                 *g:venus_repls*
 
     let g:venus_repls = {
     \  "<name used for code block>": {
-    \      "binary":        "<executable file for the REPL>",
-    \      "output_ignore": "<regex to ignore from REPL (e.g. prompt)",
-    \                           ."note that this must match on one or more of the
-    \                           ."prompt>"
+    \      "runner":        ["<runner_binary", "<runner_argument>"]
+    \                       " see runners/{python,shell} to understand what
+    \                       " these need to do
     \      "start_command": "<command to be sent to the REPL at startup>",
     \      "preprocess":    "function that modifies the lines to be sent to"
-    \                           ."the interpreter. It must cause it to output"
-    \                           ."`g:venus_delimiter` at the end",
+    \                           ."the interpreter."
     \      "vars_command":  "<command that will make REPL output it's"
     \                           ."variables as JSON {'name': 'value', ...}",
     \      "var_filter_rules": [
@@ -143,57 +141,39 @@ CONFIGURATION DEFAULTS                                       *venus-defaults*
 These are the default options. See also |g:venus_repls| for an explanation of
 the REPL dictionary >
 
-    let g:pandoc_defaults_file  = s:plugindir.'/pandoc/pandoc.yaml'
-    let g:pandoc_headers  = s:plugindir.'/pandoc/headers'
-    let g:pandoc_options  = ''
+    let g:pandoc_defaults_file   = s:plugindir.'/pandoc/pandoc.yaml'
+    let g:pandoc_headers         = s:plugindir.'/pandoc/headers'
+    let g:pandoc_options         = ''
+    let g:venus_vimtex_enabled   = 1
+    let g:venus_vimtex_full      = 0
+    let g:venus_mappings         = 1
+    let g:venus_ignorelist       = ['README.md']
 
-    let g:venus_vimtex_enabled  = 1
-    let g:venus_vimtex_full  = 0
-    let g:venus_mappings  = 1
-    let g:venus_delimiter  = '========VENUS DELIMITER========'
-    let g:venus_delimiter_regex  = '=\+VENUS DELIMITER=\+'
+    let g:markdown_fenced_languages = ['python', 'sh', 'bash', 'zsh']
 
-    let g:venus_ignorelist  = ['README.md']
-
-    " REPLs
-    let g:markdown_fenced_languages = ['python', 'sh', 'haskell', 'r']
-
-    " Note that `output_ignore` matches on 1 or more occurences
-    let g:venus_repls = get(g:, 'venus_repls', {
-    \	"python": {
-    \		"binary":        "python",
-    \		"preprocess":    "venus#PythonPreProcessor",
-    \		"output_ignore": '^\%(\%(>>>\|\.\.\.\)\+ *\)\+',
-    \		"start_command": "import json",
-    \		"vars_command":  "print(json.dumps("
-    \		                ."{x:str(y) for x, y in globals().items()}))",
-    \		"var_filter_rules": [
-    \			'v:key[0] != "_"',
-    \			'v:val[0:6] != "<module"',
-    \		],
-    \	},
-    \	"sh": {
-    \		"binary":        "sh",
-    \		"preprocess":    "venus#ShellPreProcessor",
-    \		"output_ignore": '^\(\([^ ]*\$\|>\)\+ *\)',
-    \	},
-    \	"haskell": {
-    \		"binary":        "ghci",
-    \		"preprocess":    "venus#HaskellPreProcessor",
-    \		"output_ignore": '^\(Prelude> *\|ghci> \)\+',
-    \	},
-    \	"R": {
-    \		"binary":        "R",
-    \		"preprocess":    "venus#RPreProcessor",
-    \		"output_ignore": '^\(> *\|\[\d\+\] *\)\+',
-    \	},
+    let g:venus_repls = {
+    \   "python": {
+    \       "runner": ["/usr/bin/env", "python3", s:plugindir.'/runners/python'],
+    \       "vars_command":  "print(json.dumps("
+    \                       ."{x:str(y) for x, y in globals().items()}))",
+    \       "var_filter_rules": [
+    \           'v:key[0] != "_"',
+    \           'v:key[0:4] != "venus"',
+    \           'v:val[0:6] != "<module"',
+    \       ],
+    \   },
+    \   <sh/bash/zsh>: {
+    \       "runner": ["/usr/bin/env", <sh/bash/zsh>, s:plugindir.'/runners/shell'],
+    \       "vars_command": "env | jq -Rnc '[inputs | split(\"=\") | { (.[0]): .[1] }] | add'",
+    \       "var_filter_rules": [
+    \           'v:key[0:4] != "venus"',
+    \       ],
+    \   },
     \})
 <
 
 ==============================================================================
 KNOWN ISSUES                                             *venus-known-issues*
-
-- Occasionally erroneous newlines appear in the output
 
 - calling venus#RestartAndMake() causes an off-by-one error in the output
   blocks. (?!?)
